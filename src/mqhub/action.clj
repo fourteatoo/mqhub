@@ -2,7 +2,10 @@
   (:require [taoensso.timbre :as log]
             [postal.core :as post]
             [clj-evohome.api2 :as eh]
-            [mqhub.conf :refer :all]))
+            [mqhub.conf :refer :all]
+            [mqhub.mqtt :as mqtt]
+            [cheshire.core :as json]))
+
 
 (defmulti execute-action (fn [action topic data] (:type action)))
 
@@ -16,7 +19,7 @@
                   {:action action :topic topic :data data})))
 
 (defmethod execute-action :mail
-  [action topic data]
+  [action topic _]
   ;; allow the configuration file to override the host, the from, the
   ;; body and the subject
   (post/send-message (merge {:host "localhost"}
