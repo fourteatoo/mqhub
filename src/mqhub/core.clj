@@ -4,13 +4,11 @@
             [mqhub.conf :refer :all]
             [mqhub.meter :as meter]
             [mqhub.geo :as geo]
-            [mqhub.mqtt :as mqtt])
+            [mqhub.mqtt :as mqtt]
+            [mqhub.macro :as macro]
+            [mqhub.sched :as sched])
   (:gen-class))
 
-
-#_(defn telemetry? [topic]
-    (and (= "tele" (:type topic))
-         (= "SENSOR" (:what topic))))
 
 (defmulti monitor :type)
 
@@ -25,6 +23,11 @@
   [configuration]
   (mqtt/subscribe {(:topic configuration) 0}
                   (geo/make-topic-listener configuration)))
+
+(defmethod monitor :macro
+  [configuration]
+  (mqtt/subscribe {(:topic configuration) 0}
+                  (macro/make-topic-listener configuration)))
 
 (defn start-monitor []
   (log/info "Monitoring:" (s/join ", " (keys (conf :topics))))
