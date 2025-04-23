@@ -36,8 +36,15 @@
         (assoc :topic topic)
         monitor)))
 
+(defn start-scheduler []
+  (log/info "Starting scheduler")
+  (doseq [sched (conf :schedule)]
+    (sched/schedule-actions (:when sched)
+                            (:actions sched))))
+
 (defn -main [& args]
   (start-monitor)
+  ;; (start-scheduler)
   (println "Monitor started.  Type Ctrl-C to exit.")
   (while true
     (Thread/sleep 1000)))
