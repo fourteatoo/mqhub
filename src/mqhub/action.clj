@@ -31,6 +31,39 @@
                             (conf :smtp :message)
                             (:message action))))
 
+(comment
+  (execute-action {:type :mail
+                   :message {:subject "Washing Machine"
+                             :body "The washing is ready to hang!"}}
+                  "topico"
+                  "data"))
+
+(defmethod execute-action :publish
+  [action _ _]
+  (mqtt/publish (:topic action)
+                (if (string? (:payload action))
+                  (:payload action)
+                  (json/generate-string (:payload action)))))
+
+(def scheduled (atom {}))
+
+(def execute-actions)
+
+(defn- schedule-actions [delay actions topic data]
+  (swap! scheduled
+         (fn [m]
+           (update m topic
+                   (fn [old]
+                     (when old
+                       (future-cancel old))
+                     (future
+                       (Thread/sleep (* delay 1000))
+                       (execute-actions actions topic data)))))))
+
+(defmethod execute-action :delayed
+  [action topic data]
+  (schedule-actions (:delay action) (:actions action) topic data))
+
 (def eh (atom nil))
 
 (defn unique [key seq]
