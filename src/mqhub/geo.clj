@@ -15,7 +15,7 @@
   [topic data configuration]
   (when-let [events (get (:areas configuration) (:desc data))]
     (act/execute-actions (get events (keyword (:event data)))
-                     topic data)))
+                         topic data)))
 
 (defmethod process-event "location"
   [topic data configuration]
@@ -23,7 +23,7 @@
     (-> (mapcat (fn [[name events]]
                   ((if (regions name) :enter :leave) events))
                 (:areas configuration))
-         (act/execute-actions topic data))))
+        (act/execute-actions topic data))))
 
 (defmethod process-event :default
   [topic data configuration]
