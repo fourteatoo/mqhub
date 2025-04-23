@@ -18,6 +18,8 @@
         (log/error e "Error in topic listener.")
         #_(System/exit 2)))))
 
+(def connection)
+
 (defn- restore-subscriptions []
   (run! (fn [[topic handler]]
           (log/debug "re-subscribing" topic)
