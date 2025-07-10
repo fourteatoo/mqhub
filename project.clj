@@ -14,7 +14,7 @@
                  [clojurewerkz/quartzite "2.2.0"]
                  [cheshire "6.0.0"]
                  [com.draines/postal "2.0.5"]
-                 [io.github.fourteatoo/clj-evohome "1.0.1-SNAPSHOT"]
+                 [io.github.fourteatoo/clj-evohome "1.1.1-SNAPSHOT"]
                  [io.github.fourteatoo/clj-blink "0.1.2-SNAPSHOT"]
                  [mount "0.1.23"]]
   :main ^:skip-aot fourteatoo.mqhub.core
