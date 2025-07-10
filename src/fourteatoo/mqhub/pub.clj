@@ -7,13 +7,13 @@
             [fourteatoo.mqhub.conf :refer :all]))
 
 
-(defmulti publish-topic :type)
+(defmulti start-monitor :type)
 
-(defmethod publish-topic :blink
+(defmethod start-monitor :blink
   [configuration]
   (blink/start-blink-monitor (:topic configuration) configuration))
 
-(defmethod publish-topic :evo-home
+(defmethod start-monitor :evo-home
   [configuration]
   (eh/start-evo-home-monitor (:topic configuration) configuration))
 
@@ -22,5 +22,5 @@
   (doseq [[topic configuration] publishers]
     (-> configuration
         (assoc :topic topic)
-        publish-topic)))
+        start-monitor)))
 
