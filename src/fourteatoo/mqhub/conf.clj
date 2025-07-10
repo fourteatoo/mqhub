@@ -1,6 +1,7 @@
-(ns mqhub.conf
+(ns fourteatoo.mqhub.conf
   (:require [clojure.java.io :as io]
-            [cprop.core :as cprop]))
+            [cprop.core :as cprop]
+            [mount.core :as mount]))
 
 (defn- home-conf []
   (io/file (System/getProperty "user.home") ".mqhub"))
@@ -10,7 +11,8 @@
     (cprop/load-config :file (when (.exists c)
                                c))))
 
-(def ^:dynamic config (load-configuration))
+(mount/defstate config
+  :start (load-configuration))
 
 (defn conf [& path]
   (get-in config path))

@@ -1,10 +1,10 @@
-(ns mqhub.macro
+(ns fourteatoo.mqhub.macro
   (:require
-   [mqhub.action :as act]
-   [mqhub.mqtt :as mqtt]))
+   [fourteatoo.mqhub.action :as act]
+   [fourteatoo.mqhub.mqtt :as mqtt]))
 
 (defn make-topic-listener [configuration]
   (fn [topic data]
     (let [topic (mqtt/parse-topic topic [nil :name :rest])]
-      (act/execute-actions (:commands configuration)
+      (act/execute-actions (:actions configuration)
                            topic data))))

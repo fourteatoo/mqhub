@@ -1,4 +1,4 @@
-(ns mqhub.sched
+(ns fourteatoo.mqhub.sched
   (:require [clojurewerkz.quartzite.scheduler :as qs]
             [clojurewerkz.quartzite.jobs :as qj]
             [clojurewerkz.quartzite.conversion :as qc]
@@ -9,21 +9,20 @@
             [clojurewerkz.quartzite.schedule.calendar-interval :as qsci]
             [clojurewerkz.quartzite.schedule.simple :as qss]
             [camel-snake-kebab.core :as csk]
-            [mqhub.action :as act]
+            [fourteatoo.mqhub.action :as act]
+            [fourteatoo.mqhub.misc :refer :all]
             [taoensso.timbre :as log]
-            [java-time.api :as jt])
+            [java-time.api :as jt]
+            [mount.core :as mount])
   (:import [org.quartz Job DateBuilder$IntervalUnit Trigger$TriggerState JobDataMap JobExecutionContext]
            [java.util Calendar Date]
            [java.time LocalDateTime Instant ZoneOffset]
            [clojure.lang IPersistentMap RT]))
 
 
-(defonce scheduler (atom nil))
-
-(defn start []
-  (when-not @scheduler
-    (reset! scheduler (qs/initialize))
-    (qs/start @scheduler)))
+(mount/defstate scheduler
+  :start (qs/start (qs/initialize))
+  :stop (qs/shutdown scheduler))
 
 (defn ensure-class [name]
   (if (class? name)
@@ -72,10 +71,6 @@
 
 (defn interval-unit->keyword [u]
   (enum->keyword u))
-
-(defmacro ignore-errors [& forms]
-  `(try ~@forms
-        (catch Exception _# nil)))
 
 (defn string->date [s]
   (Date/from (or (ignore-errors (Instant/parse s))
@@ -189,9 +184,9 @@
         job (make-job type :name name :group group
                       :data data
                       :description description :durable true)]
-    (qs/add-job @scheduler job)
+    (qs/add-job scheduler job)
     (doseq [t triggers]
-      (qs/add-trigger @scheduler (make-trigger t job)))
+      (qs/add-trigger scheduler (make-trigger t job)))
     [(.getGroup job)
      (.getName job)]))
 
@@ -214,17 +209,14 @@
   (defjob FooJob [actions]
     (log/info "Executing actions:" (pr-str actions)))
 
-  
   (extend-protocol clojurewerkz.quartzite.conversion/DateConversion
     java.time.LocalDateTime
     (to-date [input]
       (jt/to-sql-timestamp input)))
 
-
-  (start)
   (let [[group name] (add-job {:triggers [{:type :simple
                                            :start (jt/plus (jt/local-date-time) (jt/seconds 10))
                                            :seconds 10}]
                                :type FooJob
                                :data {:data [1 2 3]}})]
-    (qs/delete-job @scheduler (qc/to-job-key name))))
+    (qs/delete-job scheduler (qc/to-job-key name))))

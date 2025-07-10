@@ -1,9 +1,9 @@
-(ns mqhub.geo
+(ns fourteatoo.mqhub.geo
   (:require [taoensso.timbre :as log]
             [clojurewerkz.machine-head.client :as mh]
-            [mqhub.conf :refer :all]
-            [mqhub.mqtt :as mqtt]
-            [mqhub.action :as act]
+            [fourteatoo.mqhub.conf :refer :all]
+            [fourteatoo.mqhub.mqtt :as mqtt]
+            [fourteatoo.mqhub.action :as act]
             [cheshire.core :as json]
             [clojure.string :as s]
             [camel-snake-kebab.core :as csk]))
@@ -34,3 +34,5 @@
     (let [data (json/parse-string data csk/->kebab-case-keyword)
           topic (mqtt/parse-topic topic [:app :user :device :rest])]
       (process-event topic data configuration))))
+
+#_ ((make-topic-listener {}) "topic" {:data 1})
