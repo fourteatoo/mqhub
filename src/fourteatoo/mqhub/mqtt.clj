@@ -61,6 +61,7 @@
   :stop (disconnect publish-service))
 
 (defn publish [topic payload]
+  (log/info "publishing" topic ":" (pr-str payload))
   (mh/publish (:connection publish-service) topic payload))
 
 ;; parts may be omitted with nil elements
