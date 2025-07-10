@@ -43,7 +43,6 @@
 
 (defmethod process-event "network"
   [topic data configuration]
-  (prn 'process-event topic data configuration) ; -wcp09/07/25
   (when (= (:variable topic) "armed")
     (let [new-state (if (as-boolean data) :armed :disarmed)
           actions (get-in configuration
