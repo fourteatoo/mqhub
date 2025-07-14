@@ -1,5 +1,5 @@
 (ns fourteatoo.mqhub.mqtt
-  (:require [taoensso.timbre :as log]
+  (:require [fourteatoo.mqhub.log :as log]
             [clojurewerkz.machine-head.client :as mh]
             [clojure.string :as s]
             [camel-snake-kebab.core :as csk]

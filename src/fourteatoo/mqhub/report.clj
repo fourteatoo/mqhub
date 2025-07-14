@@ -5,6 +5,6 @@
    [fourteatoo.mqhub.conf :refer :all]
    [fourteatoo.mqhub.mqtt :as mqtt]
    [postal.core :as post]
-   [taoensso.timbre :as log]))
+   [fourteatoo.mqhub.log :as log]))
 
 (defn report-on [& args])

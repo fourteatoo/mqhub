@@ -1,5 +1,5 @@
 (ns fourteatoo.mqhub.pub
-  (:require [taoensso.timbre :as log]
+  (:require [fourteatoo.mqhub.log :as log]
             [clojure.string :as s]
             [fourteatoo.mqhub.mqtt :as mqtt]
             [fourteatoo.mqhub.blink :as blink]

@@ -10,7 +10,7 @@
             [camel-snake-kebab.core :as csk]
             [clojure.data :as data]
             [mount.core :as mount]
-            [taoensso.timbre :as log]))
+            [fourteatoo.mqhub.log :as log]))
 
 
 (mount/defstate evo-client

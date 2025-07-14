@@ -1,5 +1,5 @@
 (ns fourteatoo.mqhub.meter
-  (:require [taoensso.timbre :as log]
+  (:require [fourteatoo.mqhub.log :as log]
             [cprop.core :as cprop]
             [cheshire.core :as json]
             [clojure.string :as s]

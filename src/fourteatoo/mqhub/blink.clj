@@ -8,7 +8,7 @@
    [fourteatoo.mqhub.mqtt :as mqtt]
    [fourteatoo.mqhub.action :as act]
    [mount.core :as mount]
-   [taoensso.timbre :as log]))
+   [fourteatoo.mqhub.log :as log]))
 
 
 (mount/defstate blink-client

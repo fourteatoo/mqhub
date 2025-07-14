@@ -1,5 +1,5 @@
 (ns fourteatoo.mqhub.geo
-  (:require [taoensso.timbre :as log]
+  (:require [fourteatoo.mqhub.log :as log]
             [clojurewerkz.machine-head.client :as mh]
             [fourteatoo.mqhub.conf :refer :all]
             [fourteatoo.mqhub.mqtt :as mqtt]

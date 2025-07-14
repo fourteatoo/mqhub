@@ -1,10 +1,12 @@
 (ns fourteatoo.mqhub.core
-  (:require [taoensso.timbre :as log]
-            [fourteatoo.mqhub.conf :refer :all]
-            [fourteatoo.mqhub.sub :as sub]
-            [fourteatoo.mqhub.pub :as pub]
-            [fourteatoo.mqhub.sched :as sched]
-            [mount.core :as mount])
+  (:require
+   [fourteatoo.mqhub.log :as log]
+   [fourteatoo.mqhub.conf :refer :all]
+   [fourteatoo.mqhub.sub :as sub]
+   [fourteatoo.mqhub.pub :as pub]
+   [fourteatoo.mqhub.sched :as sched]
+   [mount.core :as mount]
+   [fourteatoo.mqhub.conf :as conf])
   (:gen-class))
 
 

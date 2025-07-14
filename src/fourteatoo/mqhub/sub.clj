@@ -2,7 +2,7 @@
   (:require [fourteatoo.mqhub.meter :as meter]
             [fourteatoo.mqhub.geo :as geo]
             [fourteatoo.mqhub.macro :as macro]
-            [taoensso.timbre :as log]
+            [fourteatoo.mqhub.log :as log]
             [clojure.string :as s]
             [fourteatoo.mqhub.mqtt :as mqtt]
             [fourteatoo.mqhub.blink :as blink]

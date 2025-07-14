@@ -4,7 +4,7 @@
    [fourteatoo.mqhub.conf :refer :all]
    [fourteatoo.mqhub.mqtt :as mqtt]
    [postal.core :as post]
-   [taoensso.timbre :as log]
+   [fourteatoo.mqhub.log :as log]
    [mount.core :as mount]))
 
 (defmulti execute-action (fn [action topic data] (:type action)))

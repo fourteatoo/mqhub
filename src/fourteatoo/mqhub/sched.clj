@@ -11,7 +11,7 @@
             [camel-snake-kebab.core :as csk]
             [fourteatoo.mqhub.action :as act]
             [fourteatoo.mqhub.misc :refer :all]
-            [taoensso.timbre :as log]
+            [fourteatoo.mqhub.log :as log]
             [java-time.api :as jt]
             [mount.core :as mount])
   (:import [org.quartz Job DateBuilder$IntervalUnit Trigger$TriggerState JobDataMap JobExecutionContext]
