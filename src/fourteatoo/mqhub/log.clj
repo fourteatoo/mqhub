@@ -8,17 +8,23 @@
    [fourteatoo.mqhub.conf :refer [conf]]))
 
 
-(defn setup-logging []
-  (let [default-logging {:level "info" :console true}]
-    (start-logging! (merge default-logging (conf :logging)))))
+(comment
+  (mount/running-states)
+  (deref fourteatoo.mqhub.conf/config)
+  (mount/start #'fourteatoo.mqhub.conf/config)
+  (mount/stop #'fourteatoo.mqhub.conf/config))
+
+(defn setup-logging [& [config]]
+  (let [default-config {:level "info" :console true}]
+    (start-logging! (merge default-config config))))
 
 #_(defn setup-logging []
   ;; (taoensso.timbre.tools.logging/use-timbre)
   (let [default-logging {:level "info" :console true}]
     (log/merge-config! (conf :logging))))
 
-(mount/defstate loggin-service
-  :start (setup-logging))
+(mount/defstate logging-service
+  :start (setup-logging (conf :logging)))
 
 (defmacro log [& args]
   `(log/log ~@args))
