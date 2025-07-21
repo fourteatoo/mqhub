@@ -8,7 +8,8 @@
    [fourteatoo.mqhub.mqtt :as mqtt]
    [fourteatoo.mqhub.action :as act]
    [mount.core :as mount]
-   [fourteatoo.mqhub.log :as log]))
+   [fourteatoo.mqhub.log :as log]
+   [diehard.core :as dh]))
 
 
 (mount/defstate blink-client
@@ -19,16 +20,25 @@
 (defn- restruct-networks-status [status]
   (update status :networks (partial index-by :id)))
 
+(defn- get-networks [cli]
+  (dh/with-retry {:policy retry-policy
+                  :on-failure (fn [v e]
+                                (log/error e "get-networks failed"))}
+    (blink/get-networks cli)))
+
 (defn start-blink-monitor [topic configuration]
   (future
-    (loop [previous-state nil]
-      (let [nets (:networks (restruct-networks-status (blink/get-networks blink-client)))
-            state (if (:networks configuration)
-                    (select-keys nets (:networks configuration))
-                    nets)]
-        (mqtt/publish-delta topic previous-state state)
-        (Thread/sleep (* 1000 (:freq configuration)))
-        (recur state)))))
+    (try
+      (loop [previous-state nil]
+        (let [nets (:networks (restruct-networks-status (get-networks blink-client)))
+              state (if (:networks configuration)
+                      (select-keys nets (:networks configuration))
+                      nets)]
+          (mqtt/publish-delta topic previous-state state)
+          (Thread/sleep (* 1000 (:freq configuration)))
+          (recur state)))
+      (catch Exception e
+        (log/fatal e "Exception in blink-monitor")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

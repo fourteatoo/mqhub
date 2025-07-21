@@ -10,7 +10,8 @@
             [camel-snake-kebab.core :as csk]
             [clojure.data :as data]
             [mount.core :as mount]
-            [fourteatoo.mqhub.log :as log]))
+            [fourteatoo.mqhub.log :as log]
+            [diehard.core :as dh]))
 
 
 (mount/defstate evo-client
@@ -37,13 +38,19 @@
               (update system :zones index-zones)))
        (index-by :system-id)))
 
+(defn- get-location-systems-status [cli loc]
+  (dh/with-retry {:policy retry-policy
+                  :on-failure (fn [v e]
+                                (log/error e "get-location-systems-status failed"))}
+    (eh/get-location-systems-status cli loc)))
+
 (defn start-evo-home-monitor [topic configuration]
-  (future
-    (loop [previous-state nil]
-      (let [state (restruct-systems-status (eh/get-location-systems-status evo-client (:location configuration)))]
-        (mqtt/publish-delta topic previous-state state)
-        (Thread/sleep (* (:freq configuration) 1000))
-        (recur state)))))
+  (daemon
+   (loop [previous-state nil]
+     (let [state (restruct-systems-status (get-location-systems-status evo-client (:location configuration)))]
+       (mqtt/publish-delta topic previous-state state)
+       (Thread/sleep (* (:freq configuration) 1000))
+       (recur state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
