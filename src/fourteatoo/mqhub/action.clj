@@ -64,11 +64,6 @@
        vals))
 
 (defn execute-actions [actions topic data]
-  ;; We want to avoid executing clashing actions.  For that we use
-  ;; the :name tag.  Only one action, among those with the same name,
-  ;; is executed.  Actions without a name are always executed. That
-  ;; is, if no name is specified, we presume all actions are disjoint
-  ;; and, thus, can be executed.
   (let [assoc-name (fn [a]
                      (if (get a :name)
                        a
@@ -78,8 +73,13 @@
                (try
                  (execute-action action topic data)
                  (catch Exception e
-                   (log/error e "error setting system mode"
+                   (log/error e "error executing action"
                               {:action action :topic topic :data data}))))]
+    ;; We want to avoid executing clashing actions.  For that we use
+    ;; the :name tag.  Only one action, among those with the same
+    ;; name, is executed.  Actions without a name are always
+    ;; executed. That is, if no name is specified, we presume all
+    ;; actions are disjoint and, thus, can be executed.
     (->> actions
          (map assoc-name)
          (unique :name)
