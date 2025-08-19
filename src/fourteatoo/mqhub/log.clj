@@ -29,7 +29,7 @@
 (defmacro log [& args]
   `(log/log ~@args))
 
-(defmacro debug [& args]
+(defmacro trace [& args]
   `(log/trace ~@args))
 
 (defmacro debug [& args]
@@ -39,11 +39,11 @@
   `(log/info ~@args))
 
 (defmacro warn [& args]
-  `(log/info ~@args))
+  `(log/warn ~@args))
 
 (defmacro error [& args]
   `(log/error ~@args))
 
 (defmacro fatal [& args]
-  `(log/error ~@args))
+  `(log/fatal ~@args))
 
