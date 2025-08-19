@@ -7,7 +7,8 @@
    [mount.core :as mount]
    [fourteatoo.mqhub.conf :as c :refer [conf]]
    [clojure.tools.cli :refer [parse-opts]]
-   [clojure.java.io :as io])
+   [clojure.java.io :as io]
+   [fourteatoo.mqhub.misc :as misc])
   (:gen-class))
 
 
@@ -46,23 +47,16 @@
       (usage summary errors))
     options))
 
-(def exit? (promise))
-
-(defn- arm-exit-hooks []
-  (.addShutdownHook (Runtime/getRuntime)
-                    (Thread. (fn []
-                               (log/info "Shutting down")
-                               (deliver exit? true)))))
-
 (defn -main [& args]
   (let [options (parse-cli args)]
     (binding [c/options options]
+      (misc/arm-exit-hooks)
       (mount/start)
       (sub/start-subscriptions (conf :subscriptions))
       (start-scheduler)
       (pub/start-topic-publisher (conf :publications))
       (println "MQhub started.  Type Ctrl-C to exit.")
-      (deref exit?)
+      (deref misc/exit?)
       (println "Exiting...")
       (mount/stop))))
 
