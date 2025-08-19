@@ -1,6 +1,7 @@
 (ns fourteatoo.mqhub.misc
   (:require [clojure.data :as data]
-            [diehard.core :as dh]))
+            [diehard.core :as dh]
+            [fourteatoo.mqhub.log :as log]))
 
 (defn index-by [k coll]
   (->> coll
@@ -24,13 +25,23 @@
   `(try ~@forms
         (catch Exception _# nil)))
 
+(def exit? (promise))
+
+(defn arm-exit-hooks []
+  (.addShutdownHook (Runtime/getRuntime)
+                    (Thread. (fn []
+                               (log/info "Shutting down")
+                               (deliver exit? true)))))
+
 (defmacro daemon [& body]
   `(future
      (try
        (do ~@body)
        (catch Exception e#
-         (log/fatal e# "Exception in monitor")))))
+         (log/fatal e# "Exception in monitor")
+         (deliver exit? e#)))))
 
 (dh/defretrypolicy retry-policy
-  {:max-retries 5
+  {:max-retries 10
    :backoff-ms [500 30000]})
+
