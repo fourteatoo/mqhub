@@ -5,7 +5,8 @@
             [camel-snake-kebab.core :as csk]
             [fourteatoo.mqhub.conf :refer :all]
             [fourteatoo.mqhub.misc :refer :all]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [diehard.core :as dh]))
 
 (defn- wrap-handler [handler]
   (fn [topic metadata payload]
@@ -62,7 +63,10 @@
 
 (defn publish [topic payload]
   (log/info "publishing" topic ":" (pr-str payload))
-  (mh/publish (:connection publish-service) topic payload))
+  (dh/with-retry {:policy retry-policy
+                  :on-failure (fn [v e]
+                                (log/error e "publish failed"))}
+    (mh/publish (:connection publish-service) topic payload)))
 
 ;; parts may be omitted with nil elements
 (defn parse-topic [topic parts]
