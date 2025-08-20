@@ -52,7 +52,7 @@
   [topic data configuration]
   (when (= (:variable topic) "armed")
     (let [new-state (if (as-boolean data) :armed :disarmed)
-          actions (get new-state configuration)]
+          actions (get configuration new-state)]
       (log/debug "blink system" new-state)
       (act/execute-actions actions topic data))))
 
