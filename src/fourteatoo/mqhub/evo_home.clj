@@ -83,10 +83,7 @@
     (let [topic (mqtt/parse-topic topic [nil :type :id])]
       (process-event topic data configuration))))
 
-(some #{:location :system :zone} (keys {:location 1}))
-
-(defmulti ^:private execute-action (fn [action]
-                                     (cond (:location action) :location)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- action-subtype [action]
   (some #{:location :system :zone} (keys action)))
