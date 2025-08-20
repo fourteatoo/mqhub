@@ -70,6 +70,12 @@
     (cancel-zone-override (:id topic))
     (set-zone-temperature (:id topic) data)))
 
+(defmethod process-event :default
+  [topic _ _]
+  (throw
+   (ex-info "unknown event type; supported are :system or :zone"
+            {:type topic})))
+
 (defn make-topic-listener [configuration]
   (fn [topic data]
     ;; topic = evo-home/system/XXXXX data = auto/day-off/away/off/...
