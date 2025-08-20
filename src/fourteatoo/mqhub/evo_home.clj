@@ -40,6 +40,8 @@
 
 (defn- get-location-systems-status [cli loc]
   (dh/with-retry {:policy retry-policy
+                  :on-failed-attempt (fn [v e]
+                                       (log/warn e "get-location-systems-status failed attempt"))
                   :on-failure (fn [v e]
                                 (log/error e "get-location-systems-status failed"))}
     (eh/get-location-systems-status cli loc)))
