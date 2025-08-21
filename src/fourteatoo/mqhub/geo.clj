@@ -27,7 +27,7 @@
 
 (defmethod process-event :default
   [topic data configuration]
-  (throw (ex-info "don't know how to process event" {:topic topic :data data})))
+  (log/debug "ignored event" {:topic topic :data data}))
 
 (defn make-topic-listener [configuration]
   (fn [topic data]
