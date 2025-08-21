@@ -252,17 +252,18 @@ Example:
 {:mqtt { ... }
  :smtp { ... }
  :subscriptions { ... }
- :logging {:level :debug
-		   :console false
-		   :files ["/var/log/standard.log"
-				   {:file "/var/log/standard-json.log" :encoder :json}]
-		   :file {:file "/var/log/file.log" :encoder :json}
-		   :appenders [{:appender :rolling-file
-						:rolling-policy :fixed-window
-						:triggering-policy :size-based
-						:encoder  :pattern
-						:pattern  "%p [%d] %t - %c %m%n"
-						:file     "/var/log/rolling-pattern.log"}]}}
+ :logging {:level :info
+           :console false
+           :appenders [{:appender :rolling-file
+                        :rolling-policy {:type :fixed-window
+                                         :max-index 5}
+                        :triggering-policy {:type :size-based
+                                            ;; 5MB
+                                            :max-size 5242880}
+                        :file "/home/wcp/mqhub.log"
+                        :encoder :pattern}]
+           :overrides {"fourteatoo.mqhub.mqtt" :debug
+                       "fourteatoo.mqhub.action" :debug}}}
 ```
 
 See https://github.com/pyr/unilog for further details.
