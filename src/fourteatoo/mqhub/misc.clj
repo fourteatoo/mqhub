@@ -38,7 +38,7 @@
      (try
        (do ~@body)
        (catch Exception e#
-         (log/fatal e# "Exception in monitor")
+         (log/fatal e# "Exception in daemon")
          (deliver exit? e#)))))
 
 (dh/defretrypolicy retry-policy
