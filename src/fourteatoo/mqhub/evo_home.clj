@@ -44,7 +44,7 @@
                                        (log/warn e "get-location-systems-status failed attempt"))
                   :on-failure (fn [v e]
                                 (log/error e "get-location-systems-status failed"))}
-    (eh/get-location-systems-status cli loc)))
+    (doall (eh/get-location-systems-status cli loc))))
 
 (defn start-evo-home-monitor [topic configuration]
   (daemon
