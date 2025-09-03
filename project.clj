@@ -8,8 +8,6 @@
                  [cheshire "6.0.0"]
                  [org.clojure/tools.logging "1.3.0"]
                  [spootnik/unilog "0.7.32"]
-                 ;; [com.taoensso/timbre "6.7.1"]
-                 ;; [com.taoensso/timbre-slf4j "6.7.0"]
                  [org.clojure/tools.cli "1.1.230"]
                  [diehard "0.12.0"]
                  [clojure.java-time "1.4.3"]
