@@ -204,8 +204,10 @@
   (act/execute-actions actions))
 
 (defn schedule-actions [whence actions]
-  (add-job {:triggers [{:type :cron
-                        :expression whence}]
+  (add-job {:triggers [(if (string? whence)
+                         {:type :cron
+                          :expression whence}
+                         whence)]
             :type MqhubJob
             :data actions}))
 
