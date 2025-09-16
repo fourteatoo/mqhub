@@ -218,14 +218,28 @@
   (defjob FooJob [actions]
     (log/info "Executing actions:" (pr-str actions)))
 
-  (extend-protocol clojurewerkz.quartzite.conversion/DateConversion
-    java.time.LocalDateTime
-    (to-date [input]
-      (jt/to-sql-timestamp input)))
-
   (let [[group name] (add-job {:triggers [{:type :simple
                                            :start (jt/plus (jt/local-date-time) (jt/seconds 10))
                                            :seconds 10}]
                                :type FooJob
                                :data {:data [1 2 3]}})]
     (qs/delete-job scheduler (qc/to-job-key name))))
+
+(comment
+  (def job (make-job FooJob
+                     :name "foo"
+                     :group "bar"
+                     :data {:data 'data}
+                     :description "description"
+                     :durable true))
+  (mount/start 'scheduler)
+  (qs/add-job scheduler job)
+
+  (def trigger (make-trigger {:type :calendar
+                              :start "2025-09-18T12:00"
+                              :unit :week
+                              :interval 2} job))
+  #_(bean trigger)
+
+  (qs/add-trigger scheduler trigger)
+  (trigger-fire-times trigger 10))
