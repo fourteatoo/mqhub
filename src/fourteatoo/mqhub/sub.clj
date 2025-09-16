@@ -47,10 +47,16 @@
   (mqtt/subscribe {(:topic configuration) 0}
                   (eh/make-topic-listener configuration)))
 
+(defn wrap-condition [configuration f]
+  (fn [topic data]
+    (let [p (eval (:condition configuration))]
+      (when (or (not p)
+                (p topic data))
+        (f topic data)))))
+
 (defn start-subscriptions [subscriptions]
   (log/info "Subscribing topics:" (s/join ", " (keys subscriptions)))
   (doseq [[topic configuration] subscriptions]
-    (-> configuration
-        (assoc :topic topic)
-        subscribe-topic)))
-
+    (let [configuration (assoc configuration :topic topic)]
+      (->> (subscribe-topic configuration)
+           (wrap-condition configuration)))))
