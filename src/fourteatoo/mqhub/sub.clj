@@ -14,49 +14,51 @@
 
 (def meters (atom {}))
 
-(defmethod subscribe-topic :log
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                    (fn [topic payload]
-                      (log/log (or (:level configuration)
-                                   :info)
-                        "MQTT topic:" topic " payload:" payload))))
-
-(defmethod subscribe-topic :meter
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                  (meter/make-topic-listener meters configuration)))
-
-(defmethod subscribe-topic :geo
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                  (geo/make-topic-listener configuration)))
-
-(defmethod subscribe-topic :macro
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                  (macro/make-topic-listener configuration)))
-
-(defmethod subscribe-topic :blink
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                  (blink/make-topic-listener configuration)))
-
-(defmethod subscribe-topic :evo-home
-  [configuration]
-  (mqtt/subscribe {(:topic configuration) 0}
-                  (eh/make-topic-listener configuration)))
-
 (defn wrap-condition [configuration f]
-  (fn [topic data]
-    (let [p (eval (:condition configuration))]
+  (let [p (eval (:condition configuration))]
+    (fn [topic data]
       (when (or (not p)
                 (p topic data))
         (f topic data)))))
 
+(defn- subscribe [configuration handler]
+  (mqtt/subscribe {(:topic configuration) 0}
+                  (wrap-condition configuration handler)))
+
+(defmethod subscribe-topic :log
+  [configuration]
+  (subscribe configuration
+             (fn [topic payload]
+                    (log/log (or (:level configuration)
+                                 :info)
+                             "MQTT topic:" topic " payload:" payload))))
+
+(defmethod subscribe-topic :meter
+  [configuration]
+  (subscribe configuration
+             (meter/make-topic-listener meters configuration)))
+
+(defmethod subscribe-topic :geo
+  [configuration]
+  (subscribe configuration
+             (geo/make-topic-listener configuration)))
+
+(defmethod subscribe-topic :macro
+  [configuration]
+  (subscribe configuration
+             (macro/make-topic-listener configuration)))
+
+(defmethod subscribe-topic :blink
+  [configuration]
+  (subscribe configuration
+             (blink/make-topic-listener configuration)))
+
+(defmethod subscribe-topic :evo-home
+  [configuration]
+  (subscribe configuration
+             (eh/make-topic-listener configuration)))
+
 (defn start-subscriptions [subscriptions]
   (log/info "Subscribing topics:" (s/join ", " (keys subscriptions)))
   (doseq [[topic configuration] subscriptions]
-    (let [configuration (assoc configuration :topic topic)]
-      (->> (subscribe-topic configuration)
-           (wrap-condition configuration)))))
+    (subscribe-topic (assoc configuration :topic topic))))
