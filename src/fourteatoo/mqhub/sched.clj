@@ -85,7 +85,11 @@
 (extend-protocol clojurewerkz.quartzite.conversion/DateConversion
   String
   (to-date [input]
-    (string->date input)))
+    (string->date input))
+
+  java.time.LocalDateTime
+  (to-date [input]
+    (jt/java-date input)))
 
 (defn tkey [& [name group]]
   (cond (and name group) (qt/key name group)
