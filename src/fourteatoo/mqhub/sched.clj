@@ -173,6 +173,9 @@
          (nil? start) (qt/start-now)
          job (qt/for-job job)))))
 
+(defn trigger-fire-times [trigger n]
+  (org.quartz.TriggerUtils/computeFireTimes trigger (org.quartz.impl.calendar.BaseCalendar.) n))
+
 (defn make-job [type & {:keys [name group description data durable]}]
   (qj/build
    (qj/of-type (ensure-class type))
