@@ -49,14 +49,20 @@
 
 (defn -main [& args]
   (let [options (parse-cli args)]
-    (binding [c/options options]
-      (misc/arm-exit-hooks)
-      (mount/start)
-      (sub/start-subscriptions (conf :subscriptions))
-      (start-scheduler)
-      (pub/start-topic-publisher (conf :publications))
-      (println "MQhub started.  Type Ctrl-C to exit.")
-      (deref misc/exit?)
-      (println "Exiting...")
-      (mount/stop))))
+    (try
+      (binding [c/options options]
+        (http/with-connection-pool {}
+          (misc/arm-exit-hooks)
+          (mount/start)
+          (sub/start-subscriptions (conf :subscriptions))
+          (start-scheduler)
+          (pub/start-topic-publisher (conf :publications))
+          (println "MQhub started.  Type Ctrl-C to exit.")
+          (deref misc/exit?)
+          (println "Exiting...")
+          (mount/stop)))
+      (catch Exception e
+        (log/fatal e "failed to initialize")
+        (println "Fatal error; see log.")
+        (System/exit -1)))))
 
