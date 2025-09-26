@@ -8,15 +8,15 @@
    [fourteatoo.mqhub.conf :as c :refer [conf]]
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.java.io :as io]
-   [fourteatoo.mqhub.misc :as misc])
+   [fourteatoo.mqhub.misc :as misc]
+   [clj-http.client :as http])
   (:gen-class))
 
 
 (defn start-scheduler []
   (log/info "Starting scheduler")
   (doseq [sched (conf :schedule)]
-    (sched/schedule-actions (:when sched)
-                            (:actions sched))))
+    (sched/schedule-actions (:when sched) sched)))
 
 (comment
   (mount.core/start)

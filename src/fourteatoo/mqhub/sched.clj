@@ -202,17 +202,20 @@
      (let [~data (qc/from-job-data ctx#)]
        ~@body)))
 
-(defjob MqhubJob [actions]
-  (log/info "Executing actions:" (pr-str actions))
-  (act/execute-actions actions))
+(defjob MqhubJob [configuration]
+  (log/info "Executing scheduled job:" (pr-str configuration))
+  (try
+    (act/execute-actions (:actions configuration) "<<SCHEDULER>>" {})
+    (catch Exception e
+      (log/error e "MqhubJob failed; config=" (pr-str configuration)))))
 
-(defn schedule-actions [whence actions]
+(defn schedule-actions [whence config]
   (add-job {:triggers [(if (string? whence)
                          {:type :cron
                           :expression whence}
                          whence)]
             :type MqhubJob
-            :data actions}))
+            :data config}))
 
 (comment
   (defjob FooJob [actions]
