@@ -43,5 +43,5 @@
 
 (dh/defretrypolicy retry-policy
   {:max-retries 10
-   :backoff-ms [500 30000]})
+   :backoff-ms [(* 3 1000) (* 60 1000)]})
 

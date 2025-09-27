@@ -29,13 +29,17 @@
 (defn start-blink-monitor [topic configuration]
   (daemon
     (loop [previous-state nil]
-      (let [nets (:networks (restruct-networks-status (get-networks blink-client)))
-            state (if (:networks configuration)
-                    (select-keys nets (:networks configuration))
-                    nets)]
-        (mqtt/publish-delta topic previous-state state)
-        (Thread/sleep (* 1000 (:freq configuration)))
-        (recur state)))))
+      (recur
+       (try (let [nets (:networks (restruct-networks-status (get-networks blink-client)))
+                  state (if (:networks configuration)
+                          (select-keys nets (:networks configuration))
+                          nets)]
+              (mqtt/publish-delta topic previous-state state)
+              (Thread/sleep (* 1000 (:freq configuration)))
+              state)
+            (catch Exception e
+              (log/error e "error refreshing Blink state")
+              previous-state))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -48,11 +48,16 @@
 
 (defn start-evo-home-monitor [topic configuration]
   (daemon
-   (loop [previous-state nil]
-     (let [state (restruct-systems-status (get-location-systems-status evo-client (:location configuration)))]
-       (mqtt/publish-delta topic previous-state state)
-       (Thread/sleep (* (:freq configuration) 1000))
-       (recur state)))))
+    (loop [previous-state nil]
+      (recur
+       (try
+         (let [state (restruct-systems-status (get-location-systems-status evo-client (:location configuration)))]
+           (mqtt/publish-delta topic previous-state state)
+           (Thread/sleep (* (:freq configuration) 1000))
+           state)
+         (catch Exception e
+           (log/error e "error refreshing EVO Home state")
+           previous-state))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
