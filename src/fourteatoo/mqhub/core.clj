@@ -4,6 +4,7 @@
    [fourteatoo.mqhub.sub :as sub]
    [fourteatoo.mqhub.pub :as pub]
    [fourteatoo.mqhub.sched :as sched]
+   fourteatoo.mqhub.repl
    [mount.core :as mount]
    [fourteatoo.mqhub.conf :as c :refer [conf]]
    [clojure.tools.cli :refer [parse-opts]]
