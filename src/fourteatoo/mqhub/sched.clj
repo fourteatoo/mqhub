@@ -180,10 +180,11 @@
   (qj/build
    (qj/of-type (ensure-class type))
    (qj/with-identity (jkey name group))
-   ;; For some reason the context data is mangled up by Quartz(-ite).
-   ;; The first level map keys are converted to strings.  To avoid
-   ;; that we need to encapsulate the job data in another map.  See
-   ;; also the `defjob` macro below.
+   ;; The context data is mangled up by Quartz(-ite), requiring that
+   ;; all map keys be strings.  Thus, the first level keys are
+   ;; converted to strings; a one way conversion.  To avoid messing up
+   ;; our clojure maps, we need to encapsulate the job data in another
+   ;; map.  See also the `defjob` macro below.
    (cond->
        data (qj/using-job-data {"job/data" data})
        description (qj/with-description description)
@@ -209,7 +210,7 @@
 (defjob MqhubJob [configuration]
   (log/debug "Executing scheduled job:" (pr-str configuration))
   (try
-    (act/execute-actions (:actions configuration) "<<SCHEDULER>>" {})
+    (act/execute-actions (:actions configuration) "<<SCHEDULER>>" (dissoc configuration :actions))
     (catch Exception e
       (log/error e "MqhubJob failed; config=" (pr-str configuration)))))
 
