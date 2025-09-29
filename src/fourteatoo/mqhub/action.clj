@@ -53,34 +53,46 @@
   [action topic data]
   (schedule-actions (:delay action) (:actions action) topic data))
 
-(defn- unique [key seq]
-  (->> seq
-       (reduce (fn [m e]
-                 (let [k (key e)]
-                   (if (contains? m k)
-                     m
-                     (assoc m k e))))
-               {})
-       vals))
+(defmethod execute-action :log
+  [action _ _]
+  (log/log (or (:level action) :info) (:message action)))
 
 (defn execute-actions [actions topic data]
-  (let [assoc-name (fn [a]
-                     (if (get a :name)
-                       a
-                       (assoc a :name (gensym))))
-        exec (fn [action]
+  (let [exec (fn [action]
                (log/info "topic" topic "triggers action" (pr-str action))
                (try
                  (execute-action action topic data)
                  (catch Exception e
                    (log/error e "error executing action"
                               {:action action :topic topic :data data}))))]
-    ;; We want to avoid executing clashing actions.  For that we use
-    ;; the :name tag.  Only one action, among those with the same
-    ;; name, is executed.  Actions without a name are always
-    ;; executed. That is, if no name is specified, we presume all
-    ;; actions are disjoint and, thus, can be executed.
-    (->> actions
-         (map assoc-name)
-         (unique :name)
-         (run! exec))))
+    (run! exec actions)))
+
+#_(defn- unique [key seq]
+    (->> seq
+         (reduce (fn [m e]
+                   (let [k (key e)]
+                     (if (contains? m k)
+                       m
+                       (assoc m k e))))
+                 {})
+         vals))
+
+#_(defn execute-actions [actions topic data]
+    (let [assoc-name (fn [a]
+                       (update a :name #(or % (gensym))))
+          exec (fn [action]
+                 (log/info "topic" topic "triggers action" (pr-str action))
+                 (try
+                   (execute-action action topic data)
+                   (catch Exception e
+                     (log/error e "error executing action"
+                                {:action action :topic topic :data data}))))]
+      ;; We want to avoid executing clashing actions.  For that we use
+      ;; the :name tag.  Only one action, among those with the same
+      ;; name, is executed.  Actions without a name are always
+      ;; executed. That is, if no name is specified, we presume all
+      ;; actions are disjoint and, thus, can be executed.
+      (->> actions
+           (map assoc-name)
+           (unique :name)
+           (run! exec))))
