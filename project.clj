@@ -18,12 +18,16 @@
                  [io.github.fourteatoo/clj-evohome "1.1.1-SNAPSHOT"]
                  [io.github.fourteatoo/clj-blink "0.1.2-SNAPSHOT"]
                  [nrepl "1.4.0"]
-                 [mount "0.1.23"]]
+                 [mount "0.1.23"]
+                 [com.github.steffan-westcott/clj-otel-api "0.2.9"]]
   :main ^:skip-aot fourteatoo.mqhub.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :dev {:plugins [[lein-codox "0.10.8"]
                              [lein-cloverage "1.2.4"]]
-                   :resource-paths ["dev-resources" "resources"]}}
+                   :resource-paths ["dev-resources" "resources"]}
+             :observability {:jvm-opts ["-javaagent:opentelemetry-javaagent.jar"
+                                        "-Dotel.resource.attributes=service.name=mqhub"
+                                        "-Dotel.metrics.exporter=none"]}}
   :repl-options {:init-ns fourteatoo.mqhub.core}
   :lein-release {:deploy-via :clojars})
