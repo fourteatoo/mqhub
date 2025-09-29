@@ -180,8 +180,12 @@
   (qj/build
    (qj/of-type (ensure-class type))
    (qj/with-identity (jkey name group))
+   ;; For some reason the context data is mangled up by Quartz(-ite).
+   ;; The first level map keys are converted to strings.  To avoid
+   ;; that we need to encapsulate the job data in another map.  See
+   ;; also the `defjob` macro below.
    (cond->
-       data (qj/using-job-data data)
+       data (qj/using-job-data {"job/data" data})
        description (qj/with-description description)
        durable (qj/store-durably))))
 
@@ -199,11 +203,11 @@
 
 (defmacro defjob [name [data] & body]
   `(qj/defjob ~name [ctx#]
-     (let [~data (qc/from-job-data ctx#)]
+     (let [~data (get (qc/from-job-data ctx#) "job/data")]
        ~@body)))
 
 (defjob MqhubJob [configuration]
-  (log/info "Executing scheduled job:" (pr-str configuration))
+  (log/debug "Executing scheduled job:" (pr-str configuration))
   (try
     (act/execute-actions (:actions configuration) "<<SCHEDULER>>" {})
     (catch Exception e
