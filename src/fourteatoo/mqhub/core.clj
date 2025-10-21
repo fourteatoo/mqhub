@@ -52,7 +52,7 @@
       (usage summary errors))
     result))
 
-(defn- start-daemon [options]
+(defn- start-service [options]
   (try
     (binding [c/options options]
       (http/with-connection-pool {}
@@ -73,6 +73,7 @@
 (defn- register-blink-client []
   (http/with-connection-pool {}
     (misc/arm-exit-hooks)
+    ;; do not start everything because the blink module won't like it
     (mount/start #'fourteatoo.mqhub.conf/config)
     (blink/register-client)
     (mount/stop)))
@@ -87,5 +88,5 @@
           (register-blink-client)
           
           :else
-          (start-daemon options))))
+          (start-service options))))
 
