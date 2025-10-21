@@ -16,7 +16,7 @@
                  [clojurewerkz/quartzite "2.2.0"]
                  [com.draines/postal "2.0.5"]
                  [io.github.fourteatoo/clj-evohome "1.1.1-SNAPSHOT"]
-                 [io.github.fourteatoo/clj-blink "0.1.2-SNAPSHOT"]
+                 [io.github.fourteatoo/clj-blink "1.0.0-SNAPSHOT"]
                  [nrepl "1.4.0"]
                  [mount "0.1.23"]
                  [com.github.steffan-westcott/clj-otel-api "0.2.9"]]

@@ -3,19 +3,42 @@
   system and the actions applicable to it."
   (:require
    [fourteatoo.clj-blink.api :as blink]
-   [fourteatoo.mqhub.conf :refer :all]
+   [fourteatoo.mqhub.conf :as c :refer [conf]]
    [fourteatoo.mqhub.misc :refer :all]
    [fourteatoo.mqhub.mqtt :as mqtt]
    [fourteatoo.mqhub.action :as act]
    [mount.core :as mount]
    [fourteatoo.mqhub.log :as log]
-   [diehard.core :as dh]))
+   [diehard.core :as dh]
+   [clojure.edn :as edn]))
 
+
+(defn- save-refresh-token [token]
+  (c/save-state-file (assoc (c/read-state-file)
+                            :blink-refresh-token token)))
+
+(defn- save-client-state [client]
+  (when client
+    (save-refresh-token (blink/refresh-token client))))
+
+(defn- read-refresh-token []
+  (:blink-refresh-token (c/read-state-file)))
+
+(defn- restore-client []
+  (when (conf :blink)
+    (let [refresh-token (read-refresh-token)]
+      (if refresh-token
+        (blink/authenticate-client (conf :blink :user)
+                                   (conf :blink :password)
+                                   refresh-token)
+        (throw (ex-info "No refresh token.  Must authorize the app first." {:state-file (c/state-file)}))))))
 
 (mount/defstate blink-client
-  :start (blink/authenticate-client (conf :blink :user)
-                                    (conf :blink :password)
-                                    (conf :blink :unique-id)))
+  :start (restore-client)
+  :stop (save-client-state blink-client))
+
+(defn register-client []
+  (save-refresh-token (blink/refresh-token (blink/register-client (conf :blink :user) (conf :blink :password)))))
 
 (defn- restruct-networks-status [status]
   (update status :networks (partial index-by :id)))

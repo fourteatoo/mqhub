@@ -10,7 +10,9 @@
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.java.io :as io]
    [fourteatoo.mqhub.misc :as misc]
-   [clj-http.client :as http])
+   [clj-http.client :as http]
+   [clojure.edn :as edn]
+   [fourteatoo.mqhub.blink :as blink])
   (:gen-class))
 
 
@@ -29,41 +31,61 @@
   [["-c" "--config FILE" "Confirguration file"
     :parse-fn #(io/file %)
     :validate [#(.exists %) "Configuration file does not exist"]]
+   [nil "--authorize-blink" "Perform one-time authorization with Blink servers (and save the auth tokens)"]
    ["-v" "--verbose" "Increase logging verbosity"
     :default 0
     :update-fn inc]
-   ["-h" "--help"]])
+   ["-h" "--help" "Show program usage"]])
 
 (defn- usage [summary errors]
   (println "usage: mqhub [options ...]")
   (doseq [e errors]
     (println e))
-  (println summary)
+  (when summary
+    (println summary))
   (System/exit -1))
 
 (defn- parse-cli [args]
-  (let [{:keys [options arguments summary errors]} (parse-opts args cli-options)]
+  (let [{:keys [arguments summary errors] :as result} (parse-opts args cli-options)]
     (when (or errors
               (seq arguments))
       (usage summary errors))
-    options))
+    result))
+
+(defn- start-daemon [options]
+  (try
+    (binding [c/options options]
+      (http/with-connection-pool {}
+        (misc/arm-exit-hooks)
+        (mount/start)
+        (sub/start-subscriptions (conf :subscriptions))
+        (start-scheduler)
+        (pub/start-topic-publisher (conf :publications))
+        (println "MQhub started.  Type Ctrl-C to exit.")
+        (deref misc/exit?)
+        (println "Exiting...")
+        (mount/stop)))
+    (catch Exception e
+      (log/fatal e "failed to initialize")
+      (println "Fatal error; see log.")
+      (System/exit -1))))
+
+(defn- register-blink-client []
+  (http/with-connection-pool {}
+    (misc/arm-exit-hooks)
+    (mount/start #'fourteatoo.mqhub.conf/config)
+    (blink/register-client)
+    (mount/stop)))
+
 
 (defn -main [& args]
-  (let [options (parse-cli args)]
-    (try
-      (binding [c/options options]
-        (http/with-connection-pool {}
-          (misc/arm-exit-hooks)
-          (mount/start)
-          (sub/start-subscriptions (conf :subscriptions))
-          (start-scheduler)
-          (pub/start-topic-publisher (conf :publications))
-          (println "MQhub started.  Type Ctrl-C to exit.")
-          (deref misc/exit?)
-          (println "Exiting...")
-          (mount/stop)))
-      (catch Exception e
-        (log/fatal e "failed to initialize")
-        (println "Fatal error; see log.")
-        (System/exit -1)))))
+  (let [{:keys [options summary]} (parse-cli args)]
+    (cond (:help options)
+          (usage summary nil)
+
+          (:authorize-blink options)
+          (register-blink-client)
+          
+          :else
+          (start-daemon options))))
 
