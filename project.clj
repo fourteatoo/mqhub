@@ -1,4 +1,4 @@
-(defproject io.github.fourteatoo/mqhub "0.2.0-SNAPSHOT"
+(defproject io.github.fourteatoo/mqhub "0.2.1-SNAPSHOT"
   :description "A simple(r) Home IoT Hub based on MQTT written in Clojure"
   :url "http://github.com/fourteatoo/mqhub"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
