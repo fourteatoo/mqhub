@@ -1,7 +1,8 @@
 (ns fourteatoo.mqhub.misc
   (:require [clojure.data :as data]
             [diehard.core :as dh]
-            [fourteatoo.mqhub.log :as log]))
+            [fourteatoo.mqhub.log :as log]
+            [clojure.string :as s]))
 
 (defn index-by [k coll]
   (->> coll
@@ -45,3 +46,5 @@
   {:max-retries 10
    :backoff-ms [(* 3 1000) (* 60 1000)]})
 
+(defn expand-home-dir [s]
+  (s/replace-first s #"~/" (str (System/getProperty "user.home") "/")))
