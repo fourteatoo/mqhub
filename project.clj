@@ -10,7 +10,7 @@
                  [org.clojure/tools.cli "1.2.245"]
                  [diehard "0.12.0"]
                  [clojure.java-time "1.4.3"]
-                 [cprop "0.1.21"]
+                 [cprop "0.1.19"]
                  [camel-snake-kebab "0.4.3"]
                  [clojurewerkz/machine_head "1.0.0"]
                  [clojurewerkz/quartzite "2.2.0"]
