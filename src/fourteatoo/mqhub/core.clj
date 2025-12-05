@@ -38,9 +38,9 @@
    ["-h" "--help" "Show program usage"]])
 
 (defn- usage [summary errors]
-  (println "usage: mqhub [options ...]")
   (doseq [e errors]
     (println e))
+  (println "usage: mqhub [options ...]")
   (when summary
     (println summary))
   (System/exit -1))
