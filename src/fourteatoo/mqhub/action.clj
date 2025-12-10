@@ -5,7 +5,8 @@
    [fourteatoo.mqhub.mqtt :as mqtt]
    [postal.core :as post]
    [fourteatoo.mqhub.log :as log]
-   [mount.core :as mount]))
+   [mount.core :as mount]
+   [clj-http.client :as http]))
 
 (defmulti execute-action (fn [action topic data] (:type action)))
 
@@ -26,6 +27,16 @@
                              :body (str topic " triggered a notification for you.")}
                             (conf :smtp :message)
                             (:message action))))
+
+(def default-ntfy-url "https://ntfy.sh")
+
+(defmethod execute-action :ntfy
+  [action _ _]
+  (http/post (str (or (conf :ntfy :url)
+                      default-ntfy-url)
+                  "/" (or (:topic action)
+                          (conf :ntfy :topic)))
+             {:body (:message action)}))
 
 (defmethod execute-action :publish
   [action _ _]

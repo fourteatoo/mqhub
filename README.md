@@ -200,7 +200,7 @@ Each subscription is linked to one or more actions.  Currently, there
 is just a handful of actions implemented, but there is no reason you
 couldn't add your own.
 
-The `:mail` action lets you send an email upon receipt of am MQTT
+The `:mail` action lets you send an email upon receipt of an MQTT
 message.  The configuration is simple:
 
 ```clojure
@@ -208,6 +208,28 @@ message.  The configuration is simple:
  :message {:subject "your subject"
            :body "Some text"}}
 ```
+
+The `:ntfy` action lets you send a push notification via ntfy.sh, upon
+receipt of an MQTT message.  The configuration is simple:
+
+```clojure
+{:type :ntfy
+ :topic "your unique topic name"
+ :message "Some text"}
+```
+
+You can omit the `:topic` provided you specify it in the ntfy
+configuration.  Example:
+
+```clojure
+:ntfy {:url "https://ntfy.sh"   ; this is the default
+       :topic "your topic name" ; if not specified in the actions
+       }
+```
+
+The topic in the `:ntfy` configuration serves as default if none is
+specified in the action.  Please note that the :ntfy configuration
+portion is entirely optional; the URL is by default the one above.
 
 The `:publish` action lets you send an MQTT message to the same
 broker:
