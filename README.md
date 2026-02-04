@@ -316,9 +316,9 @@ So far, the configuration file should be all you need.
 ### Bugs
 
 An HTTP error 429 from EVO Home, upon start of mqhub, may mean you
-have stumbled across a rate limitation triggered by, for instance, too
-many restarts or another concurrent Honeywell app.  Just try to start
-mqhub once again.
+have stumbled across a rate limitation.  Such errors are triggered by,
+for instance, too many restarts or another concurrent Honeywell app.
+Just wait a while and try to start mqhub once again.
 
 
 ## License
