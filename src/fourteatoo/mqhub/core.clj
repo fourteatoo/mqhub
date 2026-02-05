@@ -16,11 +16,6 @@
   (:gen-class))
 
 
-(defn start-scheduler []
-  (log/info "Starting scheduler")
-  (doseq [sched (conf :schedule)]
-    (sched/schedule-actions (:when sched) sched)))
-
 (comment
   (mount.core/start)
   (sub/start-subscriptions (conf :subscriptions))
@@ -59,7 +54,6 @@
         (misc/arm-exit-hooks)
         (mount/start)
         (sub/start-subscriptions (conf :subscriptions))
-        (start-scheduler)
         (pub/start-topic-publisher (conf :publications))
         (println "MQhub started.  Type Ctrl-C to exit.")
         (deref misc/exit?)
