@@ -83,17 +83,20 @@
           nil))
 
 (defn parse-topic-from-template [topic template]
-  (->> (s/split template #"/")
-       (map (fn [s]
-              (if (s/starts-with? s "$")
-                (keyword (subs s 1))
-                nil)))
-       (parse-topic-parts topic)))
+  (let [parsed (->> (s/split template #"/")
+                    (map (fn [s]
+                           (if (s/starts-with? s "$")
+                             (keyword (subs s 1))
+                             nil)))
+                    (parse-topic-parts topic))]
+    (if (empty? parsed)
+      topic
+      parsed)))
 
 (defn parse-topic [topic parts-or-template]
   (if (vector? parts-or-template)
-    (parse-topic-from-template topic parts-or-template)
-    (parse-topic-parts topic parts-or-template)))
+    (parse-topic-parts topic parts-or-template)
+    (parse-topic-from-template topic parts-or-template)))
 
 (defn- vec->path [v]
   (s/join "/" (map #(str (if (keyword? %) (name %) %)) v)))
