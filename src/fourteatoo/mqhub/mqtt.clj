@@ -52,6 +52,14 @@
   :start (connect)
   :stop (disconnect service))
 
+(defn- sanitize-topic [topic]
+  (->> (s/split topic #"/")
+       (map (fn [part]
+              (if (s/starts-with? part "$")
+                "+"
+                part)))
+       (s/join "/")))
+
 (defn subscribe [topic f]
   (mh/subscribe (:connection service) topic (wrap-handler f))
   (swap! (:subscriptions service) assoc topic f))
