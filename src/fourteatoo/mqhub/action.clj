@@ -1,12 +1,15 @@
 (ns fourteatoo.mqhub.action
   (:require
+   [camel-snake-kebab.core :as csk]
    [cheshire.core :as json]
+   [clj-http.client :as http]
+   [clojure.edn :as edn]
+   [clojure.string :as s]
    [fourteatoo.mqhub.conf :refer :all]
-   [fourteatoo.mqhub.mqtt :as mqtt]
-   [postal.core :as post]
    [fourteatoo.mqhub.log :as log]
-   [mount.core :as mount]
-   [clj-http.client :as http]))
+   [fourteatoo.mqhub.mqtt :as mqtt]
+   [java-time.api :as jt]
+   [postal.core :as post]))
 
 (defmulti execute-action (fn [action topic data] (:type action)))
 
@@ -15,58 +18,110 @@
   (throw (ex-info "don't know how to execute action"
                   {:action action :topic topic :data data})))
 
+(defn- mail-send
+  "`message` is a map and should at the very least contain a :to and
+  a :body.  Other components such as :subject, :from, etc can have
+  defaults from the :smtp configuration."
+  [message]
+  (post/send-message (merge {:host "localhost"}
+                            (conf :smtp :server))
+                     (merge {:from "mqhub@localhost"
+                             :subject "Notification from mqhub"}
+                            (conf :smtp :message)
+                            message)))
+
 (defmethod execute-action :mail
   [action topic _]
-  ;; allow the configuration file to override the host, the from, the
-  ;; body and the subject
-  (post/send-message (merge {:host "localhost"}
-                            (conf :smtp :server)
-                            (:server action))
-                     (merge {:from "mqhub@localhost"
-                             :subject (str "Notification from mqhub")
-                             :body (str topic " triggered a notification for you.")}
-                            (conf :smtp :message)
-                            (:message action))))
+  (mail-send (:message action)))
 
 (def default-ntfy-url "https://ntfy.sh")
 
-(defmethod execute-action :ntfy
-  [action _ _]
+(defn ntfy-send
+  ([message]
+   (ntfy-send (conf :ntfy :topic) message))
+  ([topic message]
   (http/post (str (or (conf :ntfy :url)
                       default-ntfy-url)
-                  "/" (or (:topic action)
-                          (conf :ntfy :topic)))
-             {:body (:message action)}))
+                  "/" topic)
+             {:body message})))
+
+(defmethod execute-action :ntfy
+  [action _ _]
+  (ntfy-send (or (:topic action)
+                 (conf :ntfy :topic))
+             (:message action)))
+
+(defn mqtt-publish [topic message]
+  (mqtt/publish topic
+                (cond (string? message) message
+                      (keyword? message) (name message)
+                      (map? message) (json/generate-string message)
+                      :else (str message))))
 
 (defmethod execute-action :publish
   [action _ _]
-  (mqtt/publish (:topic action)
-                (if (string? (:payload action))
-                  (:payload action)
-                  (json/generate-string (:payload action)))))
+  (mqtt-publish (:topic action) (:payload action)))
 
 (def scheduled (atom {}))
 
 (def execute-actions)
 
+(defn- ensure-ns [ns]
+  (require ns)
+  (find-ns ns))
+
+(let [exenv-ns (delay (ensure-ns 'fourteatoo.mqhub.exenv))]
+  (defn make-code-fn [args code]
+    (log/debug "make-code-fn" (pr-str code))
+    (binding [*ns* @exenv-ns]
+      (log/debug "*ns*=" *ns*)          ; -wcp04/02/26
+      (let [code (concat `(fn ~args)
+                         (list code))]
+        (eval code)))))
+
+(defn sleep [secs]
+  (Thread/sleep (* secs 1000)))
+
+(defn delay-call
+  ([delay f]
+   ;; use the function as its own id
+   (delay-call delay f f))
+  ([delay id f]
+   (swap! scheduled
+          (fn [m]
+            (update m id
+                    (fn [old]
+                      (when old
+                        (future-cancel old))
+                      (future
+                        (sleep delay)
+                        (f))))))))
+
 (defn- schedule-actions [delay actions topic data]
-  (swap! scheduled
-         (fn [m]
-           (update m topic
-                   (fn [old]
-                     (when old
-                       (future-cancel old))
-                     (future
-                       (Thread/sleep (* delay 1000))
-                       (execute-actions actions topic data)))))))
+  ;; use the topic as function id
+  (delay-call delay topic #(execute-actions actions topic data)))
 
 (defmethod execute-action :delayed
   [action topic data]
-  (schedule-actions (:delay action) (:actions action) topic data))
+  (cond (:actions action)
+        (schedule-actions (:delay action) (:actions action) topic data)
+        (:code action)
+        (let [f (make-code-fn '[ctx topic data] (:code action))]
+          (delay-call (:delay action)
+                      #(f topic data)))
+        :else
+        (throw (ex-info "delay action should specify either :actions or :code"
+                        {:action action :topic topic}))))
+
+(defn log
+  ([message]
+   (log :info message))
+  ([level message]
+   (log/log level message)))
 
 (defmethod execute-action :log
   [action _ _]
-  (log/log (or (:level action) :info) (:message action)))
+  (log (or (:level action) :info) (:message action)))
 
 (defn execute-actions [actions topic data]
   (let [exec (fn [action]
