@@ -105,7 +105,7 @@
 
 (defmethod exec-state-change :zone
   [action]
-  (if (= (:temperature action) :cancel)
+  (if (= (:temperature action) :restore)
     (cancel-zone-override (:zone action))
     (set-zone-temperature (:zone action) (:temperature action))))
 
