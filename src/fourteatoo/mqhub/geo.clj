@@ -25,14 +25,11 @@
 (defmethod process-event "location"
   [ctx topic data configuration]
   (let [regions (set (:inregions data))]
-    (log/debug "process-event location regions=" (pr-str regions))
-    (log/debug "process-event location areas=" (pr-str (:areas configuration)))
     (->> (:areas configuration)
          (map (fn [[name events]]
                 ((if (regions name) :enter :leave) events)))
          (remove nil?)
          (run! (fn [f]
-                 (log/debug "process-event f=" (pr-str f))
                  (f ctx topic data))))))
 
 (defmethod process-event :default
@@ -52,7 +49,6 @@
 (defn make-topic-listener [configuration]
   (let [ctx (atom {})
         configuration (normalize-configuration configuration)]
-    (log/debug "geo/make-topic-listener configuration=" (pr-str configuration))
     (fn [topic data]
       (let [data (json/parse-string data csk/->kebab-case-keyword)
             topic (mqtt/parse-topic topic (:topic configuration))]
