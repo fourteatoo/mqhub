@@ -146,6 +146,30 @@
             new-ctx (log/spy (f @ctx topic data))]
         (reset! ctx new-ctx)))))
 
+(defn ignore-times [times-threshold timeout-secs ctx]
+  (let [now (jt/instant)
+        times (:count ctx)]
+    (if (and (:last ctx)
+             (< (jt/time-between (:last ctx) now :seconds) timeout-secs))
+      (do
+        (log/trace "time:" times "times-threshold:" times-threshold) ; -wcp20/01/26
+        (when (< times times-threshold)
+          (update ctx :count inc)))
+      {:count 1 :last now})))
+
+(defmacro with-insistence [[ignored-times span] & body]
+  `(let [new-ctx# (ignore-times ~ignored-times ~span ~'ctx)]
+     (or new-ctx#
+         (do ~@body
+             {}))))
+
+(comment
+  (with-insistence [3 10] (do-something))
+  (->> (ignore-times 3 10 nil)
+       (ignore-times 3 10)
+       (ignore-times 3 10)
+       (ignore-times 3 10)))
+
 #_(defn- unique [key seq]
     (->> seq
          (reduce (fn [m e]
