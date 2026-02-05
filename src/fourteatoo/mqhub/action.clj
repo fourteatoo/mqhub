@@ -18,7 +18,7 @@
   (throw (ex-info "don't know how to execute action"
                   {:action action :topic topic :data data})))
 
-(defn- mail-send
+(defn mail-send
   "`message` is a map and should at the very least contain a :to and
   a :body.  Other components such as :subject, :from, etc can have
   defaults from the :smtp configuration."
