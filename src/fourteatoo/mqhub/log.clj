@@ -47,3 +47,5 @@
 (defmacro fatal [& args]
   `(log/fatal ~@args))
 
+(defmacro spy [& args]
+  `(log/spy ~@args))
