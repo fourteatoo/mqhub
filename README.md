@@ -2,7 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/fourteatoo/mqhub/badge.svg)](https://coveralls.io/github/fourteatoo/mqhub)
 
 
-# mqhub
+# MQHUB
 
 An IoT device monitor and scheduler based on MQTT, written in Clojure.
 Upon the occurrence of a specific event on a given MQTT topic, one or
@@ -19,14 +19,6 @@ MQHUB was born to scratch an itch: have a simple, lightweight sensors
 monitor and scheduler that requires little from your hardware, has
 almost no dependencies (just an MQTT broker), and can run on any OS a
 JVM can run on.  While having some fun in Clojure.
-
-Together with MQHUB, two non-MQTT resource monitors are provided.
-Although they would need their own separate application, for the time
-being, they are included in MQHUB.  Those are the EVO Home (Honeywell
-thermostats) and the Blink Camera (Amazon).  On state change they feed
-events on MQTT topics.  You can, of course, subscribe to those topics
-and associate actions to their events.
-
 
 ## Installation
 
@@ -77,6 +69,9 @@ The `:subscriptions` associate MQTT topics to actions, while the
 `:publications` are for those external events that the monitors should
 notify the MQTT broker of.  That is, the EVO Home and the Blink system
 can be consumers and sources of MQTT messages.
+
+The two non-MQTT resource monitors provided would need their own
+separate application.  For the time being, they are included in MQHUB.
 
 
 ### Subscriptions
