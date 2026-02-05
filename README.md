@@ -320,6 +320,11 @@ have stumbled across a rate limitation.  Such errors are triggered by,
 for instance, too many restarts or another concurrent Honeywell app.
 Just wait a while and try to start mqhub once again.
 
+As of February 2026, the Blink camera integration doesn't work.  It
+stopped working with Blink's latest rewrite of the authentication
+workflow.  No time to fix that; Blink doesn't seem to be interested in
+third party, open source solutions anyway.
+
 
 ## License
 
