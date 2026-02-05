@@ -49,14 +49,6 @@
 (defn- normalize-configuration [configuration]
   (update configuration :areas update-vals #(update-vals % actions->fn)))
 
-(comment
-  (normalize-configuration {:foo 1
-                            :bar 2
-                            :areas {"home" {:enter '(do data)
-                                            :leave '(do topic)}
-                                    "office" {:enter [{:type :evo-home}]
-                                              :leave [{:type :evo-home}]}}}))
-
 (defn make-topic-listener [configuration]
   (let [ctx (atom {})
         configuration (normalize-configuration configuration)]
@@ -65,7 +57,3 @@
       (let [data (json/parse-string data csk/->kebab-case-keyword)
             topic (mqtt/parse-topic topic (:topic configuration))]
         (process-event ctx topic data configuration)))))
-
-(comment
-  (mqtt/parse-topic "owntracks/walter/phone" "owntracks/walter/$device")
-  (mqtt/parse-topic "owntracks/walter/phone" "owntracks/walter/+"))
