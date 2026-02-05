@@ -2,7 +2,8 @@
   (:require [clojure.data :as data]
             [diehard.core :as dh]
             [fourteatoo.mqhub.log :as log]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [mount.core :as mount]))
 
 (defn index-by [k coll]
   (->> coll
@@ -32,7 +33,7 @@
   (.addShutdownHook (Runtime/getRuntime)
                     (Thread. (fn []
                                (log/info "Shutting down")
-                               (deliver exit? true)))))
+                               (mount/stop)))))
 
 (defmacro daemon [& body]
   `(future
