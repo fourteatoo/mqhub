@@ -104,7 +104,7 @@ zigbee2mqtt/$device/$action
 This is the equivalent of `zigbee2mqtt/+/+`, with the difference that
 the last two portions of the topic are extracted and provided to the
 app in a map.  For example an event on the topic
-`zigbee2mqtt/lamp/set` is converted to
+`zigbee2mqtt/lamp/set`, the topic is converted to
 
 ```clojure
 {:device "lamp"
