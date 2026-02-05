@@ -30,7 +30,7 @@
 (def ^:private default-avg-samples 5)
 
 (defn- cma
-  "Calculate the Cumulative Moving Average of `x`."
+  "Calculate the Cumulative Moving Average."
   [samples old-avg new-value]
   (let [old-avg (or old-avg new-value)]
     (float                    ; avoid accumulating huge ratios
