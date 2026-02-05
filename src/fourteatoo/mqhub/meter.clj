@@ -40,27 +40,34 @@
 
 (defn make-topic-listener
   [devices config]
-  (fn [topic payload]
-    (let [{:keys [telemetry threshold hysteresis trigger actions]} config
-          data (parse-data payload)
-          state (get-in @devices [topic :state] :off)
-          avg-telemetry (cma (get config :avg-samples) (get-in @devices [topic :avg]) (get-in data telemetry))
-          on-threshold (* threshold (+ 1 hysteresis))
-          off-threshold (* threshold (- 1 hysteresis))
-          current-state (cond (< avg-telemetry off-threshold) :off
-                              (> avg-telemetry on-threshold) :on
-                              :else state)]
-      (assoc-device devices topic :avg avg-telemetry)
-      (log/debug "average telemetry for" topic ":"
-                 avg-telemetry (str "(" current-state ")"))
-      (when (not= state current-state)
-        (assoc-device devices topic :state current-state)
-        (log/debug "switching state of" topic ":" state "->" current-state)
-        (when (or (and (= current-state :on) (= trigger :off-to-on))
-                  (and (= current-state :off) (= trigger :on-to-off)))
-          (act/execute-actions actions topic data))))))
+  (let [{:keys [telemetry threshold hysteresis trigger actions exec]} config
+        exec (when exec
+               (act/make-code-fn '[ctx topic data] exec))
+        ctx (atom {})]
+    (fn [topic payload]
+      (let [data (parse-data payload)
+            state (get-in @devices [topic :state] :off)
+            avg-telemetry (cma (get config :avg-samples) (get-in @devices [topic :avg]) (get-in data telemetry))
+            on-threshold (* threshold (+ 1 hysteresis))
+            off-threshold (* threshold (- 1 hysteresis))
+            current-state (cond (< avg-telemetry off-threshold) :off
+                                (> avg-telemetry on-threshold) :on
+                                :else state)]
+        (assoc-device devices topic :avg avg-telemetry)
+        (log/debug "average telemetry for" topic ":"
+                   avg-telemetry (str "(" current-state ")"))
+        (when (not= state current-state)
+          (assoc-device devices topic :state current-state)
+          (log/debug "switching state of" topic ":" state "->" current-state)
+          (when (or (and (= current-state :on) (= trigger :off-to-on))
+                    (and (= current-state :off) (= trigger :on-to-off)))
+            (cond actions
+                  (act/execute-actions actions topic data)
+                  exec
+                  (let [new-ctx (log/spy (exec @ctx topic data))]
+                    (reset! ctx new-ctx)))))))))
 
-(defn start-monitor [make-listener]
-  (log/info "Monitoring:" (s/join ", " (keys (conf :devices))))
-  (doseq [[topic configuration] (conf :devices)]
-    (mqtt/subscribe {topic 0} (make-listener configuration))))
+#_(defn start-monitor [make-listener]
+    (log/info "Monitoring:" (s/join ", " (keys (conf :devices))))
+    (doseq [[topic configuration] (conf :devices)]
+      (mqtt/subscribe topic (make-listener configuration))))
