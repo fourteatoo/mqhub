@@ -77,10 +77,23 @@
     (mh/publish (:connection publish-service) topic payload)))
 
 ;; parts may be omitted with nil elements
-(defn parse-topic [topic parts]
+(defn parse-topic-parts [topic parts]
   (dissoc (->> (s/split topic #"/" (count parts))
                (zipmap parts))
           nil))
+
+(defn parse-topic-from-template [topic template]
+  (->> (s/split template #"/")
+       (map (fn [s]
+              (if (s/starts-with? s "$")
+                (keyword (subs s 1))
+                nil)))
+       (parse-topic-parts topic)))
+
+(defn parse-topic [topic parts-or-template]
+  (if (vector? parts-or-template)
+    (parse-topic-from-template topic parts-or-template)
+    (parse-topic-parts topic parts-or-template)))
 
 (defn- vec->path [v]
   (s/join "/" (map #(str (if (keyword? %) (name %) %)) v)))
