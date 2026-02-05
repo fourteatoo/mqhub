@@ -7,8 +7,19 @@
             [fourteatoo.mqhub.mqtt :as mqtt]
             [fourteatoo.mqhub.blink :as blink]
             [fourteatoo.mqhub.evo-home :as eh]
-            [fourteatoo.mqhub.conf :refer :all]))
+            [fourteatoo.mqhub.conf :refer :all]
+            [fourteatoo.mqhub.action :as act]))
 
+
+(comment
+  ((eval (concat '(fn [topic data])
+                 '(:foo)))
+   :foo :bar)
+  (let [configuration '{:code (prn topic)}
+        f (binding [*ns* (find-ns 'fourteatoo.mqhub.action)]
+            (eval (concat '(fn [topic data])
+                          (list (:code configuration)))))]
+    (f "/top/ic" {:foo 1 :bar 2})))
 
 (defmulti subscribe-topic :type)
 
@@ -22,7 +33,7 @@
         (f topic data)))))
 
 (defn- subscribe [configuration handler]
-  (mqtt/subscribe {(:topic configuration) 0}
+  (mqtt/subscribe (:topic configuration)
                   (wrap-condition configuration handler)))
 
 (defmethod subscribe-topic :log
