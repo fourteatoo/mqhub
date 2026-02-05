@@ -1,253 +1,113 @@
 (ns fourteatoo.mqhub.sched
-  (:require [clojurewerkz.quartzite.scheduler :as qs]
-            [clojurewerkz.quartzite.jobs :as qj]
-            [clojurewerkz.quartzite.conversion :as qc]
-            [clojurewerkz.quartzite.triggers :as qt]
-            [clojurewerkz.quartzite.schedule.simple :as qss]
-            [clojurewerkz.quartzite.schedule.cron :as qsc]
-            [clojurewerkz.quartzite.schedule.daily-interval :as qsdti]
-            [clojurewerkz.quartzite.schedule.calendar-interval :as qsci]
-            [clojurewerkz.quartzite.schedule.simple :as qss]
+  (:require [chime.core :refer [chime-at]]
             [camel-snake-kebab.core :as csk]
             [fourteatoo.mqhub.action :as act]
             [fourteatoo.mqhub.misc :refer :all]
             [fourteatoo.mqhub.log :as log]
             [java-time.api :as jt]
-            [mount.core :as mount])
-  (:import [org.quartz Job DateBuilder$IntervalUnit Trigger$TriggerState JobDataMap JobExecutionContext]
-           [java.util Calendar Date]
+            [mount.core :as mount]
+            [fourteatoo.mqhub.conf :as c :refer [conf]])
+  (:import [java.util Calendar Date]
            [java.time LocalDateTime Instant ZoneOffset]
-           [clojure.lang IPersistentMap RT]))
+           (com.cronutils.model CronType)
+           (com.cronutils.model.definition CronDefinitionBuilder)
+           (com.cronutils.parser CronParser)
+           (com.cronutils.model.time ExecutionTime)))
 
 
-(mount/defstate scheduler
-  :start (qs/start (qs/initialize))
-  :stop (qs/shutdown scheduler))
+(def cron-parser (CronParser. (CronDefinitionBuilder/instanceDefinitionFor CronType/UNIX)))
 
-(defn ensure-class [name]
-  (if (class? name)
-    name
-    (RT/classForName name)))
+(defn parse-cron-expression [s]
+  (.parse cron-parser s))
 
-(defn invoke-static-method [class method & args]
-  (clojure.lang.Reflector/invokeStaticMethod class method (into-array Object args)))
+(defn execution-time-for-cron [cron]
+  (ExecutionTime/forCron cron))
 
-(defn enum->keyword [enum]
-  (csk/->kebab-case-keyword (.name enum)))
+(defn next-execution [exec-time epoch]
+  (.get (.nextExecution exec-time epoch)))
 
-(defn enum->map [klass]
-  (->> (invoke-static-method klass "values")
-       seq
-       (map (juxt enum->keyword
-                  identity))
-       (into {})))
+(comment
+  (let [et (execution-time-for-cron (parse-cron-expression "0 * * * *"))]
+    (next-execution et (next-execution et
+                                       (jt/zoned-date-time))))
+  (jt/local-date-time))
 
-(defn enum-keywords [klass]
-  (keys (enum->map klass)))
+(defn cron->instants [cron-expr]
+  (let [cron (parse-cron-expression cron-expr)
+        exec-time (ExecutionTime/forCron cron)]
+    (iterate (fn [t]
+               (next-execution exec-time t))
+             (jt/zoned-date-time))))
 
-;; We assume a kebab case syntax for enum values.  See also
-;; `clj-grpc.core/from-grpc`
-(defn keyword->enum [enum-type keyword]
-  (let [name (csk/->kebab-case-string keyword)]
-    (or (->> (invoke-static-method enum-type "values")
-             (filter (fn [ev]
-                       (= name (csk/->kebab-case-string (.name ev)))))
-             first)
-        (throw (ex-info "unknown keyword for enum type" {:type enum-type :keyword keyword
-                                                         :legal-values (enum-keywords enum-type)})))))
+(comment
+  (take 10 (map str (cron->instants "* * * * *")))
+  (take 10 (map str (cron->instants "0 9 * * Mon")))
+  (take 10 (map str (cron->instants "0 12 * * Thu")))
+  (take 10 (map str (cron->instants "0 9 * * Fri")))
+  @(chime-at (cron->instants "* * * * *")
+             #(prn "DING!!" %)))
 
-(defn int->enum [enum-type x]
-  (invoke-static-method enum-type "forNumber" x))
+;; (iterate #(jt/plus % (jt/days 14)) start-zoned-datetime)
 
-(defn as-enum [enum-type x]
-  (cond (keyword? x) (keyword->enum enum-type x)
-        (number? x) (int->enum enum-type x)
-        :else x))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn as-interval-unit [u]
-  (as-enum DateBuilder$IntervalUnit u))
-
-(defn interval-unit->keyword [u]
-  (enum->keyword u))
-
-(defn string->date [s]
-  (Date/from (or (ignore-errors (Instant/parse s))
-                 (ignore-errors
-                  (.toInstant
-                   (.atZone (LocalDateTime/parse s)
-                            (ZoneOffset/systemDefault))))
-                 (throw (ex-info "malformed date/time string" {:string s})))))
-
-#_((juxt type identity)(string->date "2021-02-16T14:31"))
-
-(extend-protocol clojurewerkz.quartzite.conversion/DateConversion
-  String
-  (to-date [input]
-    (string->date input))
-
-  java.time.LocalDateTime
-  (to-date [input]
-    (jt/java-date input)))
-
-(defn tkey [& [name group]]
-  (cond (and name group) (qt/key name group)
-        name (qt/key name)
-        :else (qt/key)))
-
-(defn jkey [& [name group]]
-  (cond (and name group) (qj/key name group)
-        name (qj/key name)
-        :else (qj/key)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmulti trigger-map->schedule :type)
-
-(defmethod trigger-map->schedule :cron
-  [m]
-  (qsc/cron-schedule (:expression m)))
-
-(defmethod trigger-map->schedule :calendar
-  [m]
-  (let [{:keys [unit interval]} m]
-    (qsci/schedule
-     (.withInterval interval (as-interval-unit unit)))))
-
-(def weekday->int
-  {:sunday Calendar/SUNDAY
-   :monday Calendar/MONDAY
-   :tuesday Calendar/TUESDAY
-   :wednsday Calendar/WEDNESDAY
-   :thursday Calendar/THURSDAY
-   :friday Calendar/FRIDAY
-   :saturday Calendar/SATURDAY})
-
-(def int->weekday (zipmap (vals weekday->int) (keys weekday->int)))
-
-(defmethod trigger-map->schedule :daily-time
-  [m]
-  (let [{:keys [unit interval repeat week-days start-daily end-daily]} m]
-    (qsdti/schedule
-     (.withInterval interval (as-interval-unit unit))
-     (cond->
-         repeat (qsdti/with-repeat-count repeat)
-         (empty? week-days) (qsdti/every-day)
-         week-days (qsdti/days-of-the-week (set (map weekday->int week-days)))
-         start-daily (qsdti/starting-daily-at (qsdti/time-of-day start-daily))
-         end-daily (qsdti/ending-daily-at (qsdti/time-of-day end-daily))))))
-
-(defmethod trigger-map->schedule :simple
-  [m]
-  (let [{:keys [ms seconds minutes hours days repeat]} m]
-    (qss/schedule
-     (cond->
-         ms (qss/with-interval-in-milliseconds ms)
-         seconds (qss/with-interval-in-seconds seconds)
-         minutes (qss/with-interval-in-minutes minutes)
-         hours (qss/with-interval-in-hours hours)
-         days (qss/with-interval-in-days days)
-         (= repeat :forever) (qss/repeat-forever)
-         (integer? repeat) (qss/with-repeat-count repeat)))))
-
-(defmethod trigger-map->schedule :default
-  [m]
-  (throw
-   (ex-info "unsupported trigger type"
-            {:type (:type m) :conf m})))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+(defn make-cron-job [configuration]
+  (let [f (act/make-code-fn '[ctx] (:exec configuration))
+        ctx (atom {})]
+    (fn [instant]
+      (let [new-ctx (f @ctx)]
+        (reset! ctx new-ctx)))))
 
 
-(defn make-trigger [schedule-conf job]
-  (let [{:keys [name group start end description priority]} schedule-conf]
-    (qt/build
-     (qt/with-identity (tkey name group))
-     (qt/with-schedule (trigger-map->schedule schedule-conf))
-     (cond->
-         priority (qt/with-priority priority)
-         description (qt/with-description description)
-         start (qt/start-at start)
-         end (qt/end-at end)
-         (nil? start) (qt/start-now)
-         job (qt/for-job job)))))
+(defn map->period [schedule]
+  (cond (:days schedule)
+        (jt/days (:days schedule))
+        (:weeks schedule)
+        (jt/days (* 7 (:weeks schedule)))
+        (:weeks schedule)
+        (jt/weeks (:weeks schedule))
+        (:months schedule)
+        (jt/months (:months schedule))
+        (:years schedule)
+        (jt/years (:years schedule))))
 
-(defn trigger-fire-times [trigger n]
-  (org.quartz.TriggerUtils/computeFireTimes trigger (org.quartz.impl.calendar.BaseCalendar.) n))
+(defn first-instant [start period]
+  (let [now (jt/zoned-date-time)
+        period-in-minutes (jt/as period :minutes)
+        diff-minutes (jt/time-between start now :minutes)]
+    (jt/plus start (jt/minutes (* period-in-minutes (Math/ceil (/ diff-minutes period-in-minutes)))))))
 
-(defn make-job [type & {:keys [name group description data durable]}]
-  (qj/build
-   (qj/of-type (ensure-class type))
-   (qj/with-identity (jkey name group))
-   ;; The context data is mangled up by Quartz(-ite), requiring that
-   ;; all map keys be strings.  Thus, the first level keys are
-   ;; converted to strings; a one way conversion.  To avoid messing up
-   ;; our clojure maps, we need to encapsulate the job data in another
-   ;; map.  See also the `defjob` macro below.
-   (cond->
-       data (qj/using-job-data {"job/data" data})
-       description (qj/with-description description)
-       durable (qj/store-durably))))
+(comment
+  (jt/zoned-date-time "2025-09-04T09:00+01")
+  (first-instant (jt/zoned-date-time "2026-01-20T13:53+01")
+                 (map->period {:weeks 2})))
 
-(defn add-job [job]
-  (log/debug "add-job" (pr-str job))
-  (let [{:keys [triggers type name group description data]} job
-        job (make-job type :name name :group group
-                      :data data
-                      :description description :durable true)]
-    (qs/add-job scheduler job)
-    (doseq [t triggers]
-      (qs/add-trigger scheduler (make-trigger t job)))
-    [(.getGroup job)
-     (.getName job)]))
+(defn map->instants [schedule]
+  (let [start (jt/zoned-date-time (:start schedule))
+        period (map->period schedule)]
+    (iterate #(jt/plus % period)
+             start)))
 
-(defmacro defjob [name [data] & body]
-  `(qj/defjob ~name [ctx#]
-     (let [~data (get (qc/from-job-data ctx#) "job/data")]
-       ~@body)))
-
-(defjob MqhubJob [configuration]
-  (log/debug "Executing scheduled job:" (pr-str configuration))
-  (try
-    (act/execute-actions (:actions configuration) "<<SCHEDULER>>" (dissoc configuration :actions))
-    (catch Exception e
-      (log/error e "MqhubJob failed; config=" (pr-str configuration)))))
+(defn make-actions-runner [actions]
+  (fn [_]
+    (act/execute-actions actions "<<SCHEDULER>>" {})))
 
 (defn schedule-actions [whence config]
-  (add-job {:triggers [(if (string? whence)
-                         {:type :cron
-                          :expression whence}
-                         whence)]
-            :type MqhubJob
-            :data config}))
+  (let [f (cond (:exec config)
+                (make-cron-job (:exec config))
+                (:actions config)
+                (make-actions-runner (:actions config)))
+        instants (cond (string? whence)
+                       (cron->instants whence)
+                       (map? whence)
+                       (map->instants whence))]
+    (chime-at instants f)))
 
-(comment
-  (defjob FooJob [actions]
-    (log/info "Executing actions:" (pr-str actions)))
+(defn start-all-schedulers [schedules]
+  (->> schedules
+       (map (fn [cfg]
+              (schedule-actions (:when cfg) cfg)))
+       doall))
 
-  (let [[group name] (add-job {:triggers [{:type :simple
-                                           :start (jt/plus (jt/local-date-time) (jt/seconds 10))
-                                           :seconds 10}]
-                               :type FooJob
-                               :data {:data [1 2 3]}})]
-    (qs/delete-job scheduler (qc/to-job-key name))))
+(mount/defstate schedulers
+  :start (start-all-schedulers (conf :schedules))
+  :stop (run! #(.close %) schedulers))
 
-(comment
-  (def job (make-job FooJob
-                     :name "foo"
-                     :group "bar"
-                     :data {:data 'data}
-                     :description "description"
-                     :durable true))
-  (mount/start 'scheduler)
-  (qs/add-job scheduler job)
-
-  (def trigger (make-trigger {:type :calendar
-                              :start "2025-09-18T12:00"
-                              :unit :week
-                              :interval 2} job))
-  #_(bean trigger)
-
-  (qs/add-trigger scheduler trigger)
-  (trigger-fire-times trigger 10))
