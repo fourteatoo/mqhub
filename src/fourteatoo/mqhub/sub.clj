@@ -48,6 +48,11 @@
   (subscribe configuration
              (macro/make-topic-listener configuration)))
 
+(defmethod subscribe-topic :exec
+  [configuration]
+  (subscribe configuration
+             (act/make-topic-listener configuration)))
+
 (defmethod subscribe-topic :blink
   [configuration]
   (subscribe configuration
