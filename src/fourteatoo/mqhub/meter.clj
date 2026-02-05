@@ -66,8 +66,3 @@
                   exec
                   (let [new-ctx (log/spy (exec @ctx topic data))]
                     (reset! ctx new-ctx)))))))))
-
-#_(defn start-monitor [make-listener]
-    (log/info "Monitoring:" (s/join ", " (keys (conf :devices))))
-    (doseq [[topic configuration] (conf :devices)]
-      (mqtt/subscribe topic (make-listener configuration))))
