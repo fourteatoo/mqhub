@@ -61,7 +61,7 @@
        (s/join "/")))
 
 (defn subscribe [topic f]
-  (mh/subscribe (:connection service) topic (wrap-handler f))
+  (mh/subscribe (:connection service) {(sanitize-topic topic) 0} (wrap-handler f))
   (swap! (:subscriptions service) assoc topic f))
 
 ;; This is to allow us to receive the same messages we publish
