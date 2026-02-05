@@ -91,10 +91,11 @@ zigbee2mqtt/my_switch/#
 
 The first matches only events on a specific topic; in this case, those
 triggered by John's mobile phone.  The second matches events on any
-user's phone, provided all users have a device named "phone".  The
-third topic matches any event (or subtopic) from "my_switch" device.
+user's phone, including John's, provided all users have a device named
+"phone".  The third topic matches any event (or subtopic) from
+"my_switch" device.
 
-In addition to those MQHUB supports named portions, like:
+In addition to those, MQHUB supports named portions, like:
 
 ```
 zigbee2mqtt/$device/$action
