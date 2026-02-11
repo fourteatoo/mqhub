@@ -1,21 +1,13 @@
 (ns fourteatoo.mqhub.pub
   (:require [fourteatoo.mqhub.log :as log]
-            [clojure.string :as s]
-            [fourteatoo.mqhub.mqtt :as mqtt]
-            [fourteatoo.mqhub.blink :as blink]
-            [fourteatoo.mqhub.evo-home :as eh]
             [fourteatoo.mqhub.conf :refer :all]))
 
 
 (defmulti start-monitor :type)
 
-(defmethod start-monitor :blink
+(defmethod start-monitor :default
   [configuration]
-  (blink/start-blink-monitor (:topic configuration) configuration))
-
-(defmethod start-monitor :evo-home
-  [configuration]
-  (eh/start-evo-home-monitor (:topic configuration) configuration))
+  (log/error "unknown monitor" {:configuration configuration}))
 
 (defn start-topic-publisher [publishers]
   (log/info "Starting publishing")
