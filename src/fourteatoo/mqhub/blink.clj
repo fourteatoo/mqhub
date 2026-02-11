@@ -10,7 +10,8 @@
    [mount.core :as mount]
    [fourteatoo.mqhub.log :as log]
    [diehard.core :as dh]
-   [clojure.edn :as edn]))
+   [clojure.edn :as edn]
+   [fourteatoo.mqhub.pub :as pub]))
 
 
 (defn- save-refresh-token [token]
@@ -105,3 +106,7 @@
         (throw
          (ex-info "malformed action; must specify :location"
                   {:action action}))))
+
+(defmethod pub/start-monitor :blink
+  [configuration]
+  (start-blink-monitor (:topic configuration) configuration))

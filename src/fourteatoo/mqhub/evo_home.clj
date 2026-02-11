@@ -11,7 +11,8 @@
             [clojure.data :as data]
             [mount.core :as mount]
             [fourteatoo.mqhub.log :as log]
-            [diehard.core :as dh]))
+            [diehard.core :as dh]
+            [fourteatoo.mqhub.pub :as pub]))
 
 
 (defn authenticate-client []
@@ -137,3 +138,7 @@
 (defmethod act/execute-action :evo-home
   [action _ _]
   (exec-state-change action))
+
+(defmethod pub/start-monitor :evo-home
+  [configuration]
+  (start-evo-home-monitor (:topic configuration) configuration))
