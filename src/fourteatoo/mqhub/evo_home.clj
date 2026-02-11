@@ -14,20 +14,38 @@
             [diehard.core :as dh]))
 
 
+(defn authenticate-client []
+  (when (conf :evo-home)
+    (eh/authenticate-client (conf :evo-home :user) (conf :evo-home :password))))
+
 (mount/defstate evo-client
-  :start (eh/authenticate-client (conf :evo-home :user) (conf :evo-home :password)))
+  :start (authenticate-client))
+
+(defn- wrap-evo-client [f & [default]]
+  (if evo-client
+    (f)
+    (do (log/warn (ex-info "EVO Home is not configured" {:evo-home (conf :evo-home)})
+                  "Omitting execution")
+        default)))
+
+(defmacro with-evo-client [& body]
+  `(wrap-evo-client (fn [] ~@body)))
 
 (defn set-zone-temperature [zone temp & {:keys [until]}]
-  (eh/set-zone-temperature evo-client zone temp))
+  (with-evo-client
+    (eh/set-zone-temperature evo-client zone temp)))
 
 (defn cancel-zone-override [zone]
-  (eh/cancel-zone-override evo-client zone))
+  (with-evo-client
+    (eh/cancel-zone-override evo-client zone)))
 
 (defn set-system-mode [system mode]
-  (eha/set-system-mode evo-client system mode))
+  (with-evo-client
+    (eha/set-system-mode evo-client system mode)))
 
 (defn set-location-mode [location mode]
-  (eh/set-location-mode evo-client location mode))
+  (with-evo-client
+    (eh/set-location-mode evo-client location mode)))
 
 (defn- index-zones [zones]
   (index-by :zone-id zones))
@@ -47,17 +65,18 @@
     (doall (eh/get-location-systems-status cli loc))))
 
 (defn start-evo-home-monitor [topic configuration]
-  (daemon
-    (loop [previous-state nil]
-      (recur
-       (try
-         (let [state (restruct-systems-status (get-location-systems-status evo-client (:location configuration)))]
-           (mqtt/publish-delta topic previous-state state)
-           (Thread/sleep (* (:freq configuration) 1000))
-           state)
-         (catch Exception e
-           (log/error e "error refreshing EVO Home state")
-           previous-state))))))
+  (with-evo-client
+    (daemon
+      (loop [previous-state nil]
+        (recur
+         (try
+           (let [state (restruct-systems-status (get-location-systems-status evo-client (:location configuration)))]
+             (mqtt/publish-delta topic previous-state state)
+             (Thread/sleep (* (:freq configuration) 1000))
+             state)
+           (catch Exception e
+             (log/error e "error refreshing EVO Home state")
+             previous-state)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
