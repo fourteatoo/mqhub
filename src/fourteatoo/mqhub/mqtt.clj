@@ -102,7 +102,7 @@
     (parse-topic-parts topic parts-or-template)
     (parse-topic-from-template topic parts-or-template)))
 
-(defn- vec->path [v]
+(defn- vec->topic [v]
   (s/join "/" (map #(str (if (keyword? %) (name %) %)) v)))
 
 (defn publish-delta
@@ -110,6 +110,6 @@
   [topic old new]
   (->> (list-new-values old new)
        (map (fn [[path v]]
-              [(vec->path path) v]))
+              [(vec->topic path) v]))
        (run! (fn [[p v]]
                (publish (str topic "/" p) (str v))))))
