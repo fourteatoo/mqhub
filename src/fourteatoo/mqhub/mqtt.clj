@@ -6,7 +6,8 @@
             [fourteatoo.mqhub.conf :refer :all]
             [fourteatoo.mqhub.misc :refer :all]
             [mount.core :as mount]
-            [diehard.core :as dh]))
+            [diehard.core :as dh]
+            [cheshire.core :as json]))
 
 (defn- wrap-handler [handler]
   (fn [topic metadata payload]
@@ -74,7 +75,10 @@
   (dh/with-retry {:policy retry-policy
                   :on-failure (fn [v e]
                                 (log/error e "publish failed"))}
-    (mh/publish (:connection publish-service) topic payload)))
+    (let [payload (if (string? payload)
+                    payload
+                    (json/generate-string payload))]
+      (mh/publish (:connection publish-service) topic payload))))
 
 ;; parts may be omitted with nil elements
 (defn parse-topic-parts [topic parts]
