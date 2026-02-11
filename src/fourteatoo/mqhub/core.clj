@@ -12,7 +12,8 @@
    [fourteatoo.mqhub.misc :as misc]
    [clj-http.client :as http]
    [clojure.edn :as edn]
-   [fourteatoo.mqhub.blink :as blink])
+   [fourteatoo.mqhub.blink :as blink]
+   [fourteatoo.mqhub.upnp])
   (:gen-class))
 
 
