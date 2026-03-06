@@ -82,9 +82,7 @@
 
 (let [exenv-ns (delay (ensure-ns 'fourteatoo.mqhub.exenv))]
   (defn make-code-fn [args code]
-    (log/debug "make-code-fn" (pr-str code))
     (binding [*ns* @exenv-ns]
-      (log/debug "*ns*=" *ns*)          ; -wcp04/02/26
       (let [code (concat `(fn ~args)
                          (list code))]
         (eval code)))))
