@@ -173,13 +173,6 @@
          (do ~@body
              {}))))
 
-(comment
-  (with-insistence [3 10] (do-something))
-  (->> (ignore-times 3 10 nil)
-       (ignore-times 3 10)
-       (ignore-times 3 10)
-       (ignore-times 3 10)))
-
 #_(defn- unique [key seq]
     (->> seq
          (reduce (fn [m e]
