@@ -16,7 +16,7 @@
                  [jarohen/chime "0.3.3"]
                  [com.cronutils/cron-utils "9.2.1"]
                  [com.draines/postal "2.0.5"]
-                 [io.github.fourteatoo/clj-evohome "1.1.0"]
+                 [io.github.fourteatoo/clj-evohome "1.2.0"]
                  [io.github.fourteatoo/clj-blink "1.0.0"]
                  [nrepl "1.5.1"]
                  [mount "0.1.23"]
