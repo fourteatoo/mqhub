@@ -44,7 +44,7 @@
          (deliver exit? e#)))))
 
 (dh/defretrypolicy retry-policy
-  {:max-retries 10
+  {:max-retries 5
    :backoff-ms [(* 3 1000) (* 60 1000)]})
 
 (defn expand-home-dir [s]
