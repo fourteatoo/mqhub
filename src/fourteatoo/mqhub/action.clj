@@ -36,14 +36,24 @@
 
 (def default-ntfy-url "https://ntfy.sh")
 
-(defn ntfy-send
-  ([message]
-   (ntfy-send (conf :ntfy :topic) message))
-  ([topic message]
+(defn- ntfy-resolve-topic [topic]
+  (if topic
+    (or (get (conf :ntfy :topics) topic)
+        topic)
+    (or (conf :ntfy :topics :default)
+        (throw
+         (ex-info "topic must be specified or a :default must be configured"
+                  {})))))
+
+(defn ntfy-send [message & {:keys [topic title]
+                            :as opts
+                            :or {title (or (conf :ntfy :title)
+                                           "MQHUB")}}]
   (http/post (str (or (conf :ntfy :url)
                       default-ntfy-url)
-                  "/" topic)
-             {:body message})))
+                  "/" (ntfy-resolve-topic topic))
+             {:body message
+              :headers {:title title}}))
 
 (defmethod execute-action :ntfy
   [action _ _]
