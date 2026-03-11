@@ -120,12 +120,16 @@
   (->> (vals @known-devices)
        (filter p?)))
 
+(defn- get-lg-friendly-name [dev]
+  (xml-zip/xml1-> (zip/xml-zip (:xml-description (fetch-xml-description dev)))
+                  :device
+                  :friendlyName
+                  xml-zip/text))
+
 (defn- lg-tv? [dev]
-  (re-matches #".*webOS TV.*"
-              (xml-zip/xml1-> (zip/xml-zip (:xml-description (fetch-xml-description dev)))
-                              :device
-                              :friendlyName
-                              xml-zip/text)))
+  (let [friendly-name (get-lg-friendly-name dev)]
+    (and friendly-name
+         (re-matches #".*webOS TV.*" friendly-name))))
 
 (defn select-lg-tvs []
   (select-devices lg-tv?))
