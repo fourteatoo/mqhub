@@ -11,16 +11,6 @@
             [fourteatoo.mqhub.action :as act]))
 
 
-(comment
-  ((eval (concat '(fn [topic data])
-                 '(:foo)))
-   :foo :bar)
-  (let [configuration '{:code (prn topic)}
-        f (binding [*ns* (find-ns 'fourteatoo.mqhub.action)]
-            (eval (concat '(fn [topic data])
-                          (list (:code configuration)))))]
-    (f "/top/ic" {:foo 1 :bar 2})))
-
 (defmulti subscribe-topic :type)
 
 (def meters (atom {}))
