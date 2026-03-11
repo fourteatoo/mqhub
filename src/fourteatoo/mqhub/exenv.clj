@@ -4,5 +4,8 @@
   some handy shorthands and limit visibility if necessary."
   (:require [fourteatoo.mqhub.action :refer :all]
             [fourteatoo.mqhub.evo-home :as evo]
-            [fourteatoo.mqhub.blink :as blink]))
+            [fourteatoo.mqhub.blink :as blink]
+            [fourteatoo.mqhub.wol :as wol]
+            [fourteatoo.mqhub.upnp :as upnp]
+            [fourteatoo.mqhub.webos :as webos]))
 
