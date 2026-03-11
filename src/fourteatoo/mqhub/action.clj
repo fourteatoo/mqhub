@@ -149,13 +149,13 @@
   (let [f (make-code-fn '[ctx topic data] (:code configuration))
         ctx (atom {})]
     (fn [topic data]
-      (let [topic (s/split topic #"/")
+      (let [topic (mqtt/parse-topic topic (:topic configuration))
             data (case (:data-format configuration)
                    :json (json/parse-string data csk/->kebab-case-keyword)
                    :edn (edn/read-string data)
                    :keyword (csk/->kebab-case-keyword data)
                    data)
-            new-ctx (log/spy (f @ctx topic data))]
+            new-ctx (f @ctx topic data)]
         (reset! ctx new-ctx)))))
 
 (defn ignore-times [times-threshold timeout-secs ctx]
