@@ -10,7 +10,8 @@
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.java.io :as io]
    [fourteatoo.mqhub.misc :as misc]
-   [clj-http.client :as http]
+   #_[clj-http.client :as http]
+   [hato.client :as http]
    [clojure.edn :as edn]
    [fourteatoo.mqhub.blink :as blink]
    [fourteatoo.mqhub.upnp])
@@ -51,7 +52,8 @@
 (defn- start-service [options]
   (try
     (binding [c/options options]
-      (http/with-connection-pool {}
+      ;; dependencies still use clj-http
+      (clj-http.client/with-connection-pool {}
         (misc/arm-exit-hooks)
         (mount/start)
         (sub/start-subscriptions (conf :subscriptions))
@@ -66,7 +68,8 @@
       (System/exit -1))))
 
 (defn- register-blink-client []
-  (http/with-connection-pool {}
+  ;; dependencies still use clj-http
+  (clj-http.client/with-connection-pool {}
     (misc/arm-exit-hooks)
     ;; do not start everything because the blink module won't like it
     (mount/start #'fourteatoo.mqhub.conf/config)
