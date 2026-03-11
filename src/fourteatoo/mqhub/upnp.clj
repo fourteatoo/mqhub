@@ -53,9 +53,6 @@
     {:source (.getHostAddress (.getAddress packet))
      :data (String. (.getData packet) 0 (.getLength packet) StandardCharsets/UTF_8)}))
 
-(comment
-  (discover))
-
 (defn- parse-ssdp-reply [data]
   (->> (s/split-lines data)
        (drop 1)
