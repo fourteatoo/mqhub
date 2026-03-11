@@ -2,7 +2,8 @@
   (:require
    [camel-snake-kebab.core :as csk]
    [cheshire.core :as json]
-   [clj-http.client :as http]
+   #_[clj-http.client :as http]
+   [hato.client :as http]
    [clojure.edn :as edn]
    [clojure.string :as s]
    [fourteatoo.mqhub.conf :refer :all]
@@ -61,11 +62,14 @@
                  (conf :ntfy :topic))
              (:message action)))
 
-(defn mqtt-publish [topic message]
+(defn mqtt-publish [topic message & [encoding]]
   (mqtt/publish topic
                 (cond (string? message) message
                       (keyword? message) (name message)
-                      (map? message) (json/generate-string message)
+                      (map? message) (case encoding
+                                       :json (json/generate-string message)
+                                       :edn (pr-str message)
+                                       (json/generate-string message))
                       :else (str message))))
 
 (defmethod execute-action :publish
