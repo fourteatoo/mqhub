@@ -30,7 +30,8 @@
 
 (defn- load-configuration
   [& [file]]
-  (cprop/load-config :file (or file (home-conf))))
+  (cprop/load-config :file (or file
+                               (str (home-conf)))))
 
 (mount/defstate config
   :start (load-configuration (opt :config)))
