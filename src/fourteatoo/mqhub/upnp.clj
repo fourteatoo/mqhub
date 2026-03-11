@@ -5,11 +5,12 @@
   (:require [fourteatoo.mqhub.misc :refer :all]
             [clojure.string :as s]
             [camel-snake-kebab.core :as csk]
-            [clj-http.client :as http]
             [clojure.xml :as xml]
+            [clojure.zip :as zip]
             [fourteatoo.mqhub.mqtt :as mqtt]
             [fourteatoo.mqhub.log :as log]
-            [fourteatoo.mqhub.pub :as pub]))
+            [fourteatoo.mqhub.pub :as pub]
+            [clojure.data.zip.xml :as xml-zip]))
 
 (def ssdp-address "239.255.255.250")
 (def ssdp-port 1900)
@@ -91,21 +92,45 @@
            (map #(assoc (parse-ssdp-reply (:data %)) :source (:source %)))))))
 
 (defn fetch-xml-description [ssdp-discovery]
-  (assoc ssdp-discovery :xml-description
-         (xml/parse (:location ssdp-discovery))))
+  (try
+    (assoc ssdp-discovery :xml-description
+           (xml/parse (:location ssdp-discovery)))
+    (catch Exception e
+      (log/warn e "cannot fetch XML description; is device off?")
+      ssdp-discovery)))
+
+(def known-devices (atom {}))
 
 (defn start-upnp-monitor [topic configuration]
   (daemon
    (loop []
      (try
-       (run! (fn [discovery]
-               (mqtt/publish (str topic "/" (:source discovery)) discovery))
-             (discover))
+       (let [discovered (discover)]
+         (swap! known-devices (fn [devs]
+                                (merge devs (index-by :source discovered))))
+         (run! (fn [discovery]
+                 (mqtt/publish (str topic "/" (:source discovery)) discovery))
+               discovered))
        (catch Exception e
          (log/error e "error refreshing UPnP discoveries")))
      (Thread/sleep (* (:freq configuration 13) 1000))
      (recur))))
 
+(defn select-devices [p?]
+  (->> (vals @known-devices)
+       (filter p?)))
+
+(defn- lg-tv? [dev]
+  (re-matches #".*webOS TV.*"
+              (xml-zip/xml1-> (zip/xml-zip (:xml-description (fetch-xml-description dev)))
+                              :device
+                              :friendlyName
+                              xml-zip/text)))
+
+(defn select-lg-tvs []
+  (select-devices lg-tv?))
+
 (defmethod pub/start-monitor :upnp
   [configuration]
   (start-upnp-monitor (:topic configuration) configuration))
+
