@@ -50,11 +50,13 @@
                             :as opts
                             :or {title (or (conf :ntfy :title)
                                            "MQHUB")}}]
-  (http/post (str (or (conf :ntfy :url)
-                      default-ntfy-url)
-                  "/" (ntfy-resolve-topic topic))
-             {:body message
-              :headers {:title title}}))
+  (let [topic (ntfy-resolve-topic topic)]
+    (log/debug "ntfy-send on" topic ":" message)
+    (http/post (str (or (conf :ntfy :url)
+                        default-ntfy-url)
+                    "/" topic)
+               {:body message
+                :headers {"Title" title}})))
 
 (defmethod execute-action :ntfy
   [action _ _]
