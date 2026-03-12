@@ -33,18 +33,22 @@
   `(wrap-evo-client (fn [] ~@body)))
 
 (defn set-zone-temperature [zone temp & {:keys [until]}]
+  (log/debug "set-zone-temperature" zone temp)
   (with-evo-client
     (eh/set-zone-temperature evo-client zone temp)))
 
 (defn cancel-zone-override [zone]
+  (log/debug "cancel-zone-override" zone)
   (with-evo-client
     (eh/cancel-zone-override evo-client zone)))
 
 (defn set-system-mode [system mode]
+  (log/debug "set-system-mode" system mode)
   (with-evo-client
     (eha/set-system-mode evo-client system mode)))
 
 (defn set-location-mode [location mode]
+  (log/debug "set-location-mode" location mode)
   (with-evo-client
     (eh/set-location-mode evo-client location mode)))
 
@@ -103,8 +107,7 @@
 
 (defn make-topic-listener [configuration]
   (fn [topic data]
-    ;; topic = evo-home/system/XXXXX data = auto/day-off/away/off/...
-    ;; topic = evo-home/zone/XXXXX data = temperature or "cancel"
+    (log/debug "EVO Home topic listener" topic data)
     (let [topic (mqtt/parse-topic topic [nil :type :id])]
       (process-event topic data configuration))))
 
@@ -137,6 +140,7 @@
 
 (defmethod act/execute-action :evo-home
   [action _ _]
+  (log/debug "EVO Home execute action" action)
   (exec-state-change action))
 
 (defmethod pub/start-monitor :evo-home
