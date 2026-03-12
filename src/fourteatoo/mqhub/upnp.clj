@@ -99,7 +99,7 @@
       (log/warn e "cannot fetch XML description; is device off?")
       ssdp-discovery)))
 
-(def known-devices (atom {}))
+(defonce known-devices (atom {}))
 
 (defn start-upnp-monitor [topic configuration]
   (daemon
@@ -116,7 +116,7 @@
      (Thread/sleep (* (:freq configuration 13) 1000))
      (recur))))
 
-(defn select-devices [p?]
+(defn list-devices [p?]
   (->> (vals @known-devices)
        (filter p?)))
 
@@ -126,13 +126,13 @@
                   :friendlyName
                   xml-zip/text))
 
-(defn- lg-tv? [dev]
+(defn- match-webos [s]
+  (re-find #"(?i)\bWebOS\b" s))
+
+(defn webos-device? [dev]
   (let [friendly-name (get-lg-friendly-name dev)]
     (and friendly-name
-         (re-matches #".*webOS TV.*" friendly-name))))
-
-(defn select-lg-tvs []
-  (select-devices lg-tv?))
+         (match-webos friendly-name))))
 
 (defmethod pub/start-monitor :upnp
   [configuration]
