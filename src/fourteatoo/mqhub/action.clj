@@ -58,6 +58,49 @@
                {:body message
                 :headers {"Title" title}})))
 
+(defn- discord-resolve-webhook [webhook]
+  (let [wh (if webhook
+             (or (get (conf :discord :webhooks) webhook)
+                 webhook)
+             (or (conf :discord :webhooks :default)
+                 (throw
+                  (ex-info "webhook must be specified or a :default must be configured"
+                           {}))))]
+    (if (s/starts-with? wh "http")
+      wh
+      (str "https://discord.com/api/webhooks/" wh))))
+
+(defn discord-send [content & {:keys [webhook description title color fields footer]
+                               :or {color 3066993
+                                    title (conf :discord :title)}}]
+  (let [webhook (discord-resolve-webhook webhook)
+        payload {:content content
+                 :embeds (when (or title description fields footer)
+                           [{:title title
+                             :description description
+                             :color color
+                             :fields (map (fn [[k v]] 
+                                            {:name (name k) :value v :inline true})
+                                          fields)
+                             :footer (when footer {:text footer})}])}]
+    (http/post webhook
+               {:content-type :json
+                :body (json/generate-string payload)})))
+
+(comment
+  (discord-send wh :content "foo")
+  (discord-send wh
+                :content "foo"
+                :description "foo"
+                :fields {:environment "Production"}
+                :color 0xBB2211))
+
+(defmethod execute-action :discord
+  [action _ _]
+  (apply discord-send (or (:webhook action)
+                          (conf :discord :webhook))
+         (flatten (seq (select-keys action [:content :description :fields :color :footer])))))
+
 (defmethod execute-action :ntfy
   [action _ _]
   (ntfy-send (or (:topic action)
