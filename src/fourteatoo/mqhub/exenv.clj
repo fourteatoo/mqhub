@@ -7,5 +7,6 @@
             [fourteatoo.mqhub.blink :as blink]
             [fourteatoo.mqhub.wol :as wol]
             [fourteatoo.mqhub.upnp :as upnp]
-            [fourteatoo.mqhub.webos :as webos]))
+            [fourteatoo.mqhub.webos :as webos]
+            [fourteatoo.mqhub.geo :as geo]))
 
