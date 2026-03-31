@@ -97,7 +97,8 @@
 
 (defmethod process-event :default
   [ctx topic data configuration]
-  (log/debug "ignored event" {:ctx ctx :topic topic :data data}))
+  (log/debug "ignored event" {:ctx ctx :topic topic :data data})
+  ctx)
 
 (defn- actions->fn [actions]
   (act/make-code-fn '[ctx topic data] actions))
