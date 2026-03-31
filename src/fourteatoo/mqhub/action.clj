@@ -116,6 +116,11 @@
                  (conf :ntfy :topic))
              (:message action)))
 
+(defmethod execute-action :telegram
+  [action _ _]
+  (apply telegram-send (:message action)
+         (flatten (seq (select-keys action [:chat-id])))))
+
 (defn mqtt-publish [topic message & [encoding]]
   (mqtt/publish topic
                 (cond (string? message) message
