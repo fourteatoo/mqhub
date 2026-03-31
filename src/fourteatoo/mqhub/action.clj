@@ -94,6 +94,15 @@
                                          (conf :telegram :chat-id))
                             :text message}}))
 
+(defn notify [message]
+  (when (conf :smtp)
+    (mail-send message))
+  (when (conf :ntfy)
+    (ntfy-send message))
+  (when (conf :discord)
+    (discord-send message))
+  (when (conf :telegram)
+    (telegram-send message)))
 
 (defmethod execute-action :discord
   [action _ _]
