@@ -88,13 +88,12 @@
                {:content-type :json
                 :body (json/generate-string payload)})))
 
-(comment
-  (discord-send wh :content "foo")
-  (discord-send wh
-                :content "foo"
-                :description "foo"
-                :fields {:environment "Production"}
-                :color 0xBB2211))
+(defn telegram-send [message & {:keys [chat-id]}]
+  (http/post (str "https://api.telegram.org/bot" (conf :telegram :token) "/sendMessage")
+             {:form-params {:chat_id (or chat-id
+                                         (conf :telegram :chat-id))
+                            :text message}}))
+
 
 (defmethod execute-action :discord
   [action _ _]
