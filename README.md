@@ -236,11 +236,29 @@ example, a subscription to `"zigbee2mqtt/$device/set"` can use the
 
 Below is a list of some primitives already implemented for you.
 
-The `mail-send` action lets you send an email upon receipt of an MQTT
-message:
+The `mail-send` action lets you send an email via a preconfigured SMTP
+server:
 
 ```clojure
-(mail-send {:to "me@home.lan" :subject "something interesting" :body "etc..."})
+;; reasonable defauts are provided or need to be provided in the
+;; `:smtp` configuration
+(mail-send "Hello World!")
+
+;; here a specific recipient and subject are provided; they override
+;; the `:smtp` configuration
+(mail-send "Hello World!" :to my-friend@local.lan :subject "Hi!")
+```
+
+The relative configuration may look something like this:
+
+```clojure
+:smtp {:server {:host "smtp.gmail.com"
+                :user "myself@gmail.com"
+                :pass "secret"
+                :ssl true}
+       :message {:from "mqhub@localhost"
+                 :subject "Notification from MQHUB"
+                 :to "myself@mydomain.me"}}
 ```
 
 The `ntfy-send` action lets you send a push notification via ntfy.sh,
@@ -262,6 +280,65 @@ configuration.  Example:
 The topic in the `:ntfy` configuration serves as default if none is
 specified in the action.  Please note that the :ntfy configuration
 portion is entirely optional; the URL is by default the one above.
+
+The `discord-send` action lets you send a push notification via the
+messaging app Discord (http://discord.com ).
+
+```clojure
+(discord-send "The washing is ready to hang!")
+```
+
+You can specify additional parameter either in the command or in the
+`:discord` configuration.
+
+```clojure
+(discord-send "The washing is ready to hang!"
+              :webhook "https://discord.com/api/webhooks/my-secret/webhook"
+              :title "hi there")
+```
+
+The webhook needs to be specified either in the command or in the
+configuration.  Sample configuration:
+
+```clojure
+:discord {:webhooks
+          {:default "https://discord.com/api/webhooks/my-secret/webhook"}}
+```
+
+The configuration allows for multiple symbolic webhooks.  Example:
+
+```clojure
+:discord {:webhooks
+          {:warning "https://discord.com/api/webhooks/my-secret/warnings"
+           :info "https://discord.com/api/webhooks/my-secret/infos"
+           :default "https://discord.com/api/webhooks/my-secret/default-webhook"}}
+```
+
+which allows you to send a message like this:
+
+```clojure
+;; this goes to the default webhook
+(discord-send "The washing is ready to hang!" :title "hi there")
+
+;; this goes to the info webhook
+(discord-send "The washing is ready to hang!"
+              :webhook :info
+              :title "hi there")
+
+;; this goes to the warning webhook
+(discord-send "The washing is ready to hang!"
+              :webhook :warning
+              :title "hi there")
+```
+
+The `telegram-send` action lets you send a push notification via the
+Telegram messaging app (http://telegram.org ).
+
+```clojure
+(telegram-send "The washing is ready to hang!")
+```
+
+
 
 The `mqtt-publish` action lets you send an MQTT message to the same
 broker:
