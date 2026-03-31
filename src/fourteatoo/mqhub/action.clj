@@ -20,16 +20,17 @@
                   {:action action :topic topic :data data})))
 
 (defn mail-send
-  "`message` is a map and should at the very least contain a :to and
-  a :body.  Other components such as :subject, :from, etc can have
-  defaults from the :smtp configuration."
-  [message]
+  "`message` is a string.  Additional key arguments are passed along to
+  the SMTP server.  Examples are :to, :subject, :from, etc, and can
+  have defaults in the `[:smtp :message]` configuration."
+  [message & {:as args}]
   (post/send-message (merge {:host "localhost"}
                             (conf :smtp :server))
                      (merge {:from "mqhub@localhost"
                              :subject "Notification from mqhub"}
                             (conf :smtp :message)
-                            message)))
+                            args
+                            {:body message})))
 
 (defmethod execute-action :mail
   [action topic _]
