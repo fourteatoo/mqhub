@@ -33,22 +33,12 @@
 ;; own zones.  The only thing we need is the coordinates from
 ;; Owntracks, of which the user can force the delivery in the app.
 
+#_
 (defmethod process-event "transition"
   [ctx topic data configuration]
   (log/debug "process-event transition:" (pr-str ctx) (pr-str data))
   (when-let [events (get (:areas configuration) (:desc data))]
     ((get events (keyword (:event data))) ctx topic data)))
-
-#_
-(defmethod process-event "location"
-  [ctx topic data configuration]
-  (let [regions (set (:inregions data))]
-    (->> (:areas configuration)
-         (map (fn [[name events]]
-                ((if (regions name) :enter :leave) events)))
-         (remove nil?)
-         (run! (fn [f]
-                 (f ctx topic data))))))
 
 (def transition-threshold 20)
 
