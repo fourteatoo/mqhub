@@ -33,5 +33,7 @@
              :observability {:jvm-opts ["-javaagent:opentelemetry-javaagent.jar"
                                         "-Dotel.resource.attributes=service.name=mqhub"
                                         "-Dotel.metrics.exporter=none"]}}
+  ;; don't upload the jar to Clojars; this is not a library!
+  :deploy-repositories [["releases" :no-op] ["snapshots" :no-op]]
   :repl-options {:init-ns fourteatoo.mqhub.core}
   :lein-release {:deploy-via :clojars})
