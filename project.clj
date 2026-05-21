@@ -34,6 +34,15 @@
                                         "-Dotel.resource.attributes=service.name=mqhub"
                                         "-Dotel.metrics.exporter=none"]}}
   ;; don't upload the jar to Clojars; this is not a library!
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag" "v" "--no-sign"]
+                  ;; ["deploy"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["vcs" "push"]]
+  ;; this doesn't work
   :deploy-repositories [["releases" :no-op] ["snapshots" :no-op]]
   :repl-options {:init-ns fourteatoo.mqhub.core}
   :lein-release {:deploy-via :clojars})
