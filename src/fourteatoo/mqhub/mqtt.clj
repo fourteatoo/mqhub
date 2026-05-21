@@ -24,14 +24,14 @@
 (defn- restore-subscriptions [connection subscriptions]
   (doseq [[topic handler] subscriptions]
     (log/debug "re-subscribing" topic)
-    (mh/subscribe connection topic (wrap-handler handler))))
+    (mh/subscribe connection {topic 0} handler)))
 
 (defn connect [& [connect-opts]]
   (let [subscriptions (atom {})
         conn (mh/connect (conf :mqtt :broker)
                          {;; :client-id (conf :mqtt :client-id)
                           :on-connection-lost (fn [cause]
-                                                (log/debug "connection lost, cause:" cause))
+                                                (log/warn "connection lost, cause:" cause))
                           :on-connect-complete (fn [connection _ url]
                                                  (log/debug "connect complete" connection)
                                                  (restore-subscriptions connection @subscriptions))
@@ -62,8 +62,10 @@
        (s/join "/")))
 
 (defn subscribe [topic f]
-  (mh/subscribe (:connection service) {(sanitize-topic topic) 0} (wrap-handler f))
-  (swap! (:subscriptions service) assoc topic f))
+  (let [topic (sanitize-topic topic)
+        f (wrap-handler f)]
+    (mh/subscribe (:connection service) {topic 0} f)
+    (swap! (:subscriptions service) assoc topic f)))
 
 ;; This is to allow us to receive the same messages we publish
 (mount/defstate publish-service
