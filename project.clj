@@ -44,5 +44,4 @@
                   ["vcs" "push"]]
   ;; this doesn't work
   :deploy-repositories [["releases" :no-op] ["snapshots" :no-op]]
-  :repl-options {:init-ns fourteatoo.mqhub.core}
-  :lein-release {:deploy-via :clojars})
+  :repl-options {:init-ns fourteatoo.mqhub.core})
