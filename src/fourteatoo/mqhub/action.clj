@@ -151,7 +151,7 @@
         (eval code)))))
 
 (defn sleep [secs]
-  (Thread/sleep (* secs 1000)))
+  (Thread/sleep (int (* secs 1000))))
 
 (defn delay-call
   ([delay f]
