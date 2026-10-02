@@ -9,5 +9,6 @@
             [fourteatoo.mqhub.upnp :as upnp]
             [fourteatoo.mqhub.webos :as webos]
             [fourteatoo.mqhub.geo :as geo]
-            [fourteatoo.mqhub.weather :as weather]))
+            [fourteatoo.mqhub.weather :as weather]
+            [fourteatoo.mqhub.log :as log]))
 
