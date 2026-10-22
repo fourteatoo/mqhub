@@ -29,31 +29,42 @@
       (catch Exception e
         (log/error e "failed to subscribe to MQTT topic" topic)))))
 
-(defn connect [& [connect-opts]]
-  (let [subscriptions (atom {})
-        conn (mh/connect (conf :mqtt :broker)
-                         {:client-id (conf :mqtt :client-id)
-                          :on-connection-lost (fn [cause]
-                                                (log/warn "connection lost, cause:" cause))
-                          :on-connect-complete (fn [connection _ url]
-                                                 (log/debug "connect complete" connection)
-                                                 (restore-subscriptions connection @subscriptions))
-                          :opts (merge {:auto-reconnect true
-                                        :connection-timeout 30
-                                        :clean-session true}
-                                       connect-opts)})]
-    (mh/publish conn "hello" "mqhub connected")
-    {:connection conn
-     :subscriptions subscriptions}))
+(defn connect [client-id & [connect-opts]]
+  (log/debug "connect" (pr-str connect-opts))
+  (try
+    (let [subscriptions (atom {})
+          conn (mh/connect (conf :mqtt :broker)
+                           {:client-id client-id
+                            :on-connection-lost (fn [cause]
+                                                  (log/warn "connection lost, cause:" cause))
+                            #_#_:on-connect-complete (fn [connection _ url]
+                                                       (log/debug "connect complete" connection)
+                                                       (restore-subscriptions connection @subscriptions))
+                            :opts (merge {:auto-reconnect true
+                                          :connection-timeout 30
+                                          :clean-session false}
+                                         connect-opts)})]
+      (mh/publish conn "hello" "mqhub connected")
+      {:connection conn
+       :subscriptions subscriptions})
+    (catch Exception e
+      (log/error e "cannot connect to MQTT broker")
+      (throw e))))
 
 (defn disconnect [service]
+  (log/debug "disconnect" (pr-str service))
   (try
     (mh/disconnect-and-close (:connection service))
+    ;; some async cleanup operations still goin on?
+    (Thread/sleep 500)
     (catch Exception e
-      (log/error e "cannot disconnect:" (pr-str service)))))
+      (log/error e "cannot disconnect:" (pr-str service))
+      (throw e))))
 
 (mount/defstate service
-  :start (connect)
+  :start (connect (str (or (conf :mqtt :client-id)
+                           "mqhub")
+                       "-listener"))
   :stop (disconnect service))
 
 (defn- sanitize-topic [topic]
@@ -72,7 +83,9 @@
 
 ;; This is to allow us to receive the same messages we publish
 (mount/defstate publish-service
-  :start (connect)
+  :start (connect (str (or (conf :mqtt :client-id)
+                           "mqhub")
+                       "-publisher"))
   :stop (disconnect publish-service))
 
 (defn publish [topic payload]
