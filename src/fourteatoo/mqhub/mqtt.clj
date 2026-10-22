@@ -24,12 +24,15 @@
 (defn- restore-subscriptions [connection subscriptions]
   (doseq [[topic handler] subscriptions]
     (log/debug "re-subscribing" topic)
-    (mh/subscribe connection {topic 0} handler)))
+    (try
+      (mh/subscribe connection {topic 0} handler)
+      (catch Exception e
+        (log/error e "failed to subscribe to MQTT topic" topic)))))
 
 (defn connect [& [connect-opts]]
   (let [subscriptions (atom {})
         conn (mh/connect (conf :mqtt :broker)
-                         {;; :client-id (conf :mqtt :client-id)
+                         {:client-id (conf :mqtt :client-id)
                           :on-connection-lost (fn [cause]
                                                 (log/warn "connection lost, cause:" cause))
                           :on-connect-complete (fn [connection _ url]
