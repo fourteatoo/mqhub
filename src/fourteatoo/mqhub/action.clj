@@ -165,7 +165,9 @@
                       (when old
                         (future-cancel old))
                       (future
+                        (log/debug "delay-call: sleeping" delay "seconds")
                         (sleep delay)
+                        (log/debug "delay-call: running" f)
                         (f))))))))
 
 (defn- schedule-actions [delay actions topic data]
